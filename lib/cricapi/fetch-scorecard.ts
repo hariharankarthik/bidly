@@ -65,10 +65,18 @@ function addBattingToMap(
   };
 }
 
+function batsmanDisplayName(raw: Record<string, unknown>): string {
+  const b = raw.batsman ?? raw.Batsman;
+  if (typeof b === "string") return str(b);
+  if (b && typeof b === "object") {
+    const bo = b as Record<string, unknown>;
+    return str(bo.name ?? bo.shortName ?? bo.longname ?? bo.displayName);
+  }
+  return str(raw.name ?? raw.player ?? raw.shortName);
+}
+
 function parseBatsmanRow(raw: Record<string, unknown>): { name: string; batting: BattingStats } | null {
-  const name =
-    str(raw.batsman ?? raw.name ?? raw.player ?? raw.shortName ?? raw["Batsman"]) ||
-    str(raw["batsman"]);
+  const name = batsmanDisplayName(raw);
   if (!name) return null;
   const runs = num(raw.R ?? raw.runs ?? raw.run);
   const balls = num(raw.B ?? raw.balls ?? raw.bf ?? raw.ballsFaced);
@@ -88,44 +96,56 @@ function parseBatsmanRow(raw: Record<string, unknown>): { name: string; batting:
 }
 
 /**
- * CricAPI-style innings array + fallback deep scan for `batsman`/`R` rows.
+ * CricAPI `match_scorecard`: `data` may be innings[], or an object with `score` / `innings`.
+ * Deep-scan merges any nested `batsman` rows.
  */
 export function extractPerformancesFromCricApiJson(data: unknown): CricApiMappedPerformance[] {
   const byName = new Map<string, CricApiMappedPerformance>();
 
-  const root = data && typeof data === "object" && "data" in data ? (data as { data: unknown }).data : data;
-  const inningsList = Array.isArray(root) ? root : [];
+  const addFromObject = (raw: Record<string, unknown>) => {
+    const row = parseBatsmanRow(raw);
+    if (row) addBattingToMap(byName, row.name, row.batting);
+  };
 
-  for (const inn of inningsList) {
-    if (!inn || typeof inn !== "object") continue;
-    const scores = (inn as Record<string, unknown>).scores;
-    if (!Array.isArray(scores)) continue;
-    for (const group of scores) {
-      const rows = Array.isArray(group) ? group : [group];
-      for (const raw of rows) {
-        if (!raw || typeof raw !== "object") continue;
-        const row = parseBatsmanRow(raw as Record<string, unknown>);
-        if (row) addBattingToMap(byName, row.name, row.batting);
+  const ingestInningsList = (inningsList: unknown[]) => {
+    for (const inn of inningsList) {
+      if (!inn || typeof inn !== "object") continue;
+      const scores = (inn as Record<string, unknown>).scores;
+      if (!Array.isArray(scores)) continue;
+      for (const group of scores) {
+        const rows = Array.isArray(group) ? group : [group];
+        for (const raw of rows) {
+          if (!raw || typeof raw !== "object") continue;
+          addFromObject(raw as Record<string, unknown>);
+        }
       }
     }
+  };
+
+  const root = data && typeof data === "object" && "data" in data ? (data as { data: unknown }).data : data;
+
+  if (Array.isArray(root)) {
+    ingestInningsList(root);
+  } else if (root && typeof root === "object") {
+    const o = root as Record<string, unknown>;
+    if (Array.isArray(o.score)) ingestInningsList(o.score as unknown[]);
+    if (Array.isArray(o.innings)) ingestInningsList(o.innings as unknown[]);
   }
 
-  if (byName.size === 0) {
-    const visit = (node: unknown) => {
-      if (!node || typeof node !== "object") return;
-      if (Array.isArray(node)) {
-        for (const x of node) visit(x);
-        return;
-      }
-      const o = node as Record<string, unknown>;
-      if ("batsman" in o || "Batsman" in o) {
-        const row = parseBatsmanRow(o);
-        if (row) addBattingToMap(byName, row.name, row.batting);
-      }
-      for (const v of Object.values(o)) visit(v);
-    };
-    visit(data);
-  }
+  const visit = (node: unknown) => {
+    if (!node || typeof node !== "object") return;
+    if (Array.isArray(node)) {
+      for (const x of node) visit(x);
+      return;
+    }
+    const o = node as Record<string, unknown>;
+    if ("batsman" in o || "Batsman" in o) {
+      addFromObject(o);
+    }
+    for (const v of Object.values(o)) visit(v);
+  };
+  visit(data);
+  if (root != null && root !== data) visit(root);
 
   return [...byName.values()];
 }

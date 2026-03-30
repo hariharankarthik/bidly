@@ -2,11 +2,11 @@ import { createServerClient } from "@supabase/ssr";
 import { scorePlayerMatch, type PlayerMatchStats } from "@/lib/fantasy-scoring";
 import { effectivePointsWithLineup } from "@/lib/fantasy-scoring/lineup-multipliers";
 import { extractMatchIdsFromCurrentMatchesJson } from "@/lib/cricapi/discover-match-ids";
+import { mapCricApiExtractedToPerformances } from "@/lib/cricapi/map-player-names";
 import {
   extractPerformancesFromCricApiJson,
   fetchCricApiScorecardJson,
   mergeBowlingFromCricApiJson,
-  normalizeName,
 } from "@/lib/cricapi/fetch-scorecard";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
@@ -276,22 +276,8 @@ export async function GET(req: NextRequest) {
         if (r.player_id && r.team_id) playerToTeam.set(r.player_id, r.team_id);
       }
 
-      const performances: PerformanceRow[] = [];
       const players = playersBySport.get(league.sport_id) ?? [];
-
-      for (const row of extracted) {
-        const key = normalizeName(row.playerName);
-        const exact = players.find((p) => normalizeName(p.name) === key);
-        const fuzzy =
-          exact ??
-          players.find(
-            (p) =>
-              key.length >= 4 &&
-              (normalizeName(p.name).includes(key) || key.includes(normalizeName(p.name))),
-          );
-        if (!fuzzy) continue;
-        performances.push({ player_id: fuzzy.id, ...row.stats });
-      }
+      const { performances } = mapCricApiExtractedToPerformances(players, extracted);
 
       // Aggregate effective points per team with XI + C/VC multipliers
       const agg = new Map<string, { total: number; breakdown: Record<string, number> }>();

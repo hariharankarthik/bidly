@@ -6,11 +6,11 @@ import {
 } from "@/lib/fantasy-scoring";
 import { effectivePointsWithLineup } from "@/lib/fantasy-scoring/lineup-multipliers";
 import { parseCricApiMatchUuid } from "@/lib/cricapi/match-id";
+import { mapCricApiExtractedToPerformances } from "@/lib/cricapi/map-player-names";
 import {
   extractPerformancesFromCricApiJson,
   fetchCricApiScorecardJson,
   mergeBowlingFromCricApiJson,
-  normalizeName,
 } from "@/lib/cricapi/fetch-scorecard";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -32,28 +32,7 @@ async function mapCricApiNamesToPerformances(
 ): Promise<{ performances: PerformanceInput[]; unmatched: string[] }> {
   const { data: players, error } = await supabase.from("players").select("id, name").eq("sport_id", sportId);
   if (error) throw new Error(error.message);
-  const list = players ?? [];
-  const performances: PerformanceInput[] = [];
-  const unmatched: string[] = [];
-
-  for (const row of rows) {
-    const key = normalizeName(row.playerName);
-    const exact = list.find((p) => normalizeName(p.name) === key);
-    const fuzzy =
-      exact ??
-      list.find(
-        (p) =>
-          key.length >= 4 &&
-          (normalizeName(p.name).includes(key) || key.includes(normalizeName(p.name))),
-      );
-    if (!fuzzy) {
-      unmatched.push(row.playerName);
-      continue;
-    }
-    performances.push({ player_id: fuzzy.id, ...row.stats });
-  }
-
-  return { performances, unmatched };
+  return mapCricApiExtractedToPerformances(players ?? [], rows);
 }
 
 /**
@@ -122,6 +101,8 @@ export async function POST(req: NextRequest) {
 
   let unmatchedNames: string[] | undefined;
   let cricapiUsed = false;
+  let cricExtractedCount = 0;
+  let cricSampleNames: string[] = [];
 
   if (cricapi_match_id && String(cricapi_match_id).trim()) {
     cricapiUsed = true;
@@ -129,6 +110,8 @@ export async function POST(req: NextRequest) {
       const raw = await fetchCricApiScorecardJson(effectiveMatchId);
       let extracted = extractPerformancesFromCricApiJson(raw);
       extracted = mergeBowlingFromCricApiJson(extracted, raw);
+      cricExtractedCount = extracted.length;
+      cricSampleNames = extracted.slice(0, 25).map((e) => e.playerName);
       const mapped = await mapCricApiNamesToPerformances(supabase, league.sport_id, extracted);
       performances = mapped.performances;
       unmatchedNames = mapped.unmatched.length ? mapped.unmatched : undefined;
@@ -232,7 +215,17 @@ export async function POST(req: NextRequest) {
 
   if (cricapiUsed) {
     return NextResponse.json(
-      { error: "CricAPI returned no mappable players — check names vs your player pool or CRICAPI_KEY." },
+      {
+        error:
+          "CricAPI scorecard had no players that matched your DB (or no batting rows were parsed). Check extracted_batters and unmatched_names.",
+        extracted_batters: cricExtractedCount,
+        sample_cricapi_names: cricSampleNames,
+        unmatched_names: unmatchedNames ?? [],
+        hint:
+          cricExtractedCount === 0
+            ? "Parser found zero batting rows — CricAPI JSON shape may differ; open Network tab or log scorecard structure."
+            : "Rename players in Supabase to match CricAPI (e.g. V Kohli → Virat Kohli), or fix last-name collisions.",
+      },
       { status: 400 },
     );
   }
