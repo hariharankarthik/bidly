@@ -62,7 +62,7 @@ function mergeBreakdown(into: Record<string, number>, add: Record<string, number
  * - Cron reads `CRICAPI_DAILY_MATCH_IDS` (comma-separated) and syncs those matches
  *   for every `fantasy_leagues` row where status = 'active'.
  *
- * Match discovery (listing today's matches) is intentionally not built yet.
+ * Match discovery uses CRICAPI_IPL_SERIES_ID and optional CRICAPI_DAILY_MATCH_DATE (YYYY-MM-DD).
  */
 export async function GET(req: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -107,6 +107,15 @@ export async function GET(req: NextRequest) {
 
   const matchIdsRaw = process.env.CRICAPI_DAILY_MATCH_IDS ?? "";
   let matchIds = parseCsv(matchIdsRaw);
+
+  const envDateTrim = (process.env.CRICAPI_DAILY_MATCH_DATE ?? "").trim().slice(0, 10);
+  const yyyyMmDd = (d: Date) => d.toISOString().slice(0, 10);
+  /** Calendar day for discovery primary pass and for fantasy_scores.match_date (UTC “logical” day). */
+  const cronMatchDate = envDateTrim || yyyyMmDd(new Date());
+  const yesterdayOfAnchor = yyyyMmDd(
+    new Date(new Date(`${cronMatchDate}T12:00:00.000Z`).getTime() - 24 * 60 * 60 * 1000),
+  );
+
   if (matchIds.length === 0) {
     if (!cricApiKey) {
       return json(
@@ -118,19 +127,10 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const today = new Date();
-    const yyyyMmDd = (d: Date) => d.toISOString().slice(0, 10);
-    const envDate = (process.env.CRICAPI_DAILY_MATCH_DATE ?? "").trim();
-    const matchDatePrefix = (envDate || yyyyMmDd(today)).slice(0, 10);
-    const yesterdayPrefix = yyyyMmDd(new Date(today.getTime() - 24 * 60 * 60 * 1000)).slice(0, 10);
+    const matchDatePrefix = cronMatchDate;
+    const yesterdayPrefix = yesterdayOfAnchor;
     const seriesIdFilter = (process.env.CRICAPI_IPL_SERIES_ID ?? "").trim() || null;
-    const seriesSubstringsFromEnv = parseCsv(process.env.CRICAPI_IPL_SERIES_SUBSTRINGS ?? "");
-    const seriesSubstrings =
-      seriesSubstringsFromEnv.length > 0
-        ? seriesSubstringsFromEnv
-        : seriesIdFilter
-          ? []
-          : ["indian premier league"];
+    const seriesSubstrings = seriesIdFilter ? [] : ["indian premier league"];
     const teamSubstrings = parseCsv(process.env.CRICAPI_IPL_TEAM_SUBSTRINGS ?? "");
 
     const discover = (raw: unknown, datePrefix: string) =>
@@ -198,10 +198,11 @@ export async function GET(req: NextRequest) {
       return json({
         debug: true,
         stage: "discovery",
+        cron_match_date: cronMatchDate,
         match_date_prefix: matchDatePrefix,
         yesterday_date_prefix: yesterdayPrefix,
         series_id_filter: seriesIdFilter,
-        series_substrings: seriesSubstrings,
+        series_name_substrings_applied: seriesSubstrings,
         team_substrings: teamSubstrings,
         discovered_match_ids: matchIds,
         pages: [0, 1, 2, 3].map((offset, i) => ({ offset, ...describe(raws[i]) })),
@@ -209,12 +210,11 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const matchDate = process.env.CRICAPI_DAILY_MATCH_DATE ?? new Date().toISOString().slice(0, 10);
   if (!matchIds.length) {
     return json(
       {
         error: "No IPL match ids found for today via currentMatches",
-        fix: "Either set CRICAPI_DAILY_MATCH_IDS, or CRICAPI_IPL_SERIES_ID (CricAPI series_id for IPL), or CRICAPI_IPL_SERIES_SUBSTRINGS. Optional: CRICAPI_IPL_TEAM_SUBSTRINGS.",
+        fix: "Set CRICAPI_DAILY_MATCH_DATE (YYYY-MM-DD) if needed, CRICAPI_IPL_SERIES_ID, CRICAPI_DAILY_MATCH_IDS, or optional CRICAPI_IPL_TEAM_SUBSTRINGS.",
       },
       { status: 400 },
     );
@@ -324,7 +324,7 @@ export async function GET(req: NextRequest) {
           league_id: league.id,
           team_id: t.id,
           match_id: String(matchId),
-          match_date: matchDate,
+          match_date: cronMatchDate,
           total_points: Math.round(b.total * 100) / 100,
           breakdown: {
             source: "cricapi_v1",
@@ -342,5 +342,10 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ success: true, synced_matches: matchIds.length, updated: updatedTotal });
+  return json({
+    success: true,
+    synced_matches: matchIds.length,
+    updated: updatedTotal,
+    cron_match_date: cronMatchDate,
+  });
 }
