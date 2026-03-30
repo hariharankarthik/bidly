@@ -55,22 +55,46 @@ function extractUniqueIdsFromCurrentMatches(raw: unknown, matchDatePrefix: strin
   const uniqueIds: string[] = [];
 
   const norm = (s: unknown) => String(s ?? "").toLowerCase();
+  const pickTeamName = (t: unknown) => {
+    if (!t) return "";
+    if (typeof t === "string") return t;
+    if (typeof t === "object") {
+      const o = t as Record<string, unknown>;
+      return String(o.name ?? o.shortname ?? o.shortName ?? o.title ?? o.teamName ?? "");
+    }
+    return "";
+  };
 
   for (const m of matches) {
     if (!m || typeof m !== "object") continue;
     const mm = m as Record<string, unknown>;
-    const uid = mm["unique_id"] ?? mm["uniqueId"];
+    const uid = mm["unique_id"] ?? mm["uniqueId"] ?? mm["id"] ?? mm["match_id"] ?? mm["matchId"];
     if (!uid) continue;
 
-    const team1 = norm(mm?.["team-1"] ?? mm?.team1 ?? mm?.team_1);
-    const team2 = norm(mm?.["team-2"] ?? mm?.team2 ?? mm?.team_2);
+    const teamsRaw = mm?.teams;
+    const teamInfoRaw = mm?.teamInfo ?? mm?.teaminfo ?? mm?.teamsInfo;
+    const teams = Array.isArray(teamsRaw) ? teamsRaw : [];
+    const teamInfo = Array.isArray(teamInfoRaw) ? teamInfoRaw : [];
+
+    const team1Name =
+      String(mm?.["team-1"] ?? mm?.team1 ?? mm?.team_1 ?? "") ||
+      pickTeamName(teamInfo[0]) ||
+      pickTeamName(teams[0]);
+    const team2Name =
+      String(mm?.["team-2"] ?? mm?.team2 ?? mm?.team_2 ?? "") ||
+      pickTeamName(teamInfo[1]) ||
+      pickTeamName(teams[1]);
+
+    const team1 = norm(team1Name);
+    const team2 = norm(team2Name);
     const type = norm(mm?.type);
     const started = Boolean(mm?.matchStarted);
-    const date = norm(mm?.date);
+    const date = norm(mm?.date ?? mm?.dateTimeGMT ?? mm?.dateTime ?? mm?.matchDate ?? mm?.match_datetime);
+    const name = norm(mm?.name ?? mm?.title ?? mm?.series ?? mm?.matchType);
 
     const matchesIplTeam = teamSubstrings.some((sub) => {
       const ss = sub.toLowerCase();
-      return team1.includes(ss) || team2.includes(ss);
+      return team1.includes(ss) || team2.includes(ss) || name.includes(ss);
     });
     if (!matchesIplTeam) continue;
 
@@ -192,8 +216,13 @@ export async function GET(req: NextRequest) {
             match_id: mm["match_id"] ?? mm["matchId"] ?? null,
             team_1: mm["team-1"] ?? mm["team1"] ?? mm["team_1"] ?? null,
             team_2: mm["team-2"] ?? mm["team2"] ?? mm["team_2"] ?? null,
+            teams: mm["teams"] ?? null,
+            teamInfo: mm["teamInfo"] ?? mm["teaminfo"] ?? mm["teamsInfo"] ?? null,
+            name: mm["name"] ?? mm["title"] ?? null,
             date: mm["date"] ?? null,
+            dateTimeGMT: mm["dateTimeGMT"] ?? null,
             type: mm["type"] ?? null,
+            matchType: mm["matchType"] ?? null,
             matchStarted: mm["matchStarted"] ?? null,
           };
         });
