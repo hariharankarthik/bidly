@@ -78,6 +78,25 @@ function batsmanDisplayName(raw: Record<string, unknown>): string {
 function parseBatsmanRow(raw: Record<string, unknown>): { name: string; batting: BattingStats } | null {
   const name = batsmanDisplayName(raw);
   if (!name) return null;
+
+  // Some CricAPI payloads omit a literal `batsman` key and instead only provide stat fields.
+  // Avoid accidentally treating bowling aggregates as batting by requiring at least one batting stat key.
+  const hasBattingKeys =
+    "R" in raw ||
+    "runs" in raw ||
+    "run" in raw ||
+    "B" in raw ||
+    "balls" in raw ||
+    "bf" in raw ||
+    "ballsFaced" in raw ||
+    "4s" in raw ||
+    "fours" in raw ||
+    "4" in raw ||
+    "6s" in raw ||
+    "sixes" in raw ||
+    "6" in raw;
+  if (!hasBattingKeys) return null;
+
   const runs = num(raw.R ?? raw.runs ?? raw.run);
   const balls = num(raw.B ?? raw.balls ?? raw.bf ?? raw.ballsFaced);
   const fours = num(raw["4s"] ?? raw.fours ?? raw.four);
@@ -139,13 +158,32 @@ export function extractPerformancesFromCricApiJson(data: unknown): CricApiMapped
       return;
     }
     const o = node as Record<string, unknown>;
-    if ("batsman" in o || "Batsman" in o) {
-      addFromObject(o);
-    }
+    // Prefer batting-row detection by stat keys (some scorecards omit `batsman` literal).
+    // This keeps deep-scan resilient across CricAPI payload variations.
+    const looksLikeBatting =
+      "batsman" in o ||
+      "Batsman" in o ||
+      "batsmen" in o ||
+      "batting" in o ||
+      "R" in o ||
+      "runs" in o ||
+      "run" in o ||
+      "B" in o ||
+      "balls" in o ||
+      "bf" in o ||
+      "ballsFaced" in o ||
+      "4s" in o ||
+      "fours" in o ||
+      "6s" in o ||
+      "sixes" in o;
+    if (looksLikeBatting) addFromObject(o);
     for (const v of Object.values(o)) visit(v);
   };
-  visit(data);
-  if (root != null && root !== data) visit(root);
+  // Avoid double counting: if the primary parse already found batters, don't scan again.
+  if (byName.size === 0) {
+    visit(data);
+    if (root != null && root !== data) visit(root);
+  }
 
   return [...byName.values()];
 }
