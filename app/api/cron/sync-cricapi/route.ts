@@ -183,7 +183,11 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const matchDatePrefix = (process.env.CRICAPI_DAILY_MATCH_DATE ?? new Date().toISOString().slice(0, 10)).slice(0, 10);
+    const today = new Date();
+    const yyyyMmDd = (d: Date) => d.toISOString().slice(0, 10);
+    const envDate = (process.env.CRICAPI_DAILY_MATCH_DATE ?? "").trim();
+    const matchDatePrefix = (envDate || yyyyMmDd(today)).slice(0, 10);
+    const yesterdayPrefix = yyyyMmDd(new Date(today.getTime() - 24 * 60 * 60 * 1000)).slice(0, 10);
     const teamSubstrings = parseCsv(process.env.CRICAPI_IPL_TEAM_SUBSTRINGS ?? "chennai,mumbai,kolkata,delhi,rajasthan,punjab,bangalore,lucknow,gujarat,hyderabad");
 
     // Discovery: try a few pages since CricAPI is offset-based.
@@ -194,7 +198,13 @@ export async function GET(req: NextRequest) {
       raws.push(r);
       matchIds.push(...extractUniqueIdsFromCurrentMatches(r, matchDatePrefix, teamSubstrings));
     }
-    // Fallback: if CricAPI date format differs, retry without date filtering.
+    // Fallback 1: if match ended after midnight / date mismatch, try yesterday.
+    if (!matchIds.length) {
+      for (const r of raws) {
+        matchIds.push(...extractUniqueIdsFromCurrentMatches(r, yesterdayPrefix, teamSubstrings));
+      }
+    }
+    // Fallback 2: if CricAPI date format differs, retry without date filtering.
     if (!matchIds.length) {
       for (const r of raws) {
         matchIds.push(...extractUniqueIdsFromCurrentMatches(r, "", teamSubstrings));
@@ -237,6 +247,7 @@ export async function GET(req: NextRequest) {
         debug: true,
         stage: "discovery",
         match_date_prefix: matchDatePrefix,
+        yesterday_date_prefix: yesterdayPrefix,
         team_substrings: teamSubstrings,
         discovered_match_ids: matchIds,
         pages: [0, 1, 2, 3].map((offset, i) => ({ offset, ...describe(raws[i]) })),
