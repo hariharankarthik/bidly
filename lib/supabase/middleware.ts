@@ -4,7 +4,7 @@ import { safeNextPath } from "@/lib/safe-path";
 import type { SupabaseCookieToSet } from "@/lib/supabase/cookie-types";
 import { resolveSupabasePublishableKey } from "@/lib/supabase/env";
 
-const PROTECTED_PREFIXES = ["/dashboard", "/room", "/practice", "/profile"];
+const PROTECTED_PREFIXES = ["/dashboard", "/room", "/practice", "/profile", "/scoring"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });

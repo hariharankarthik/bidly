@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
@@ -56,12 +57,19 @@ export function LeagueClient({
 
   return (
     <div className="space-y-6">
+      <p className="text-xs text-neutral-500">
+        How points work:{" "}
+        <Link href="/scoring" className="text-emerald-400 underline-offset-2 hover:underline">
+          Scoring system
+        </Link>
+        . Host can still run mock rows for demos; real matches use the fantasy engine via <code className="rounded bg-neutral-800 px-1">performances</code> in the API.
+      </p>
       {isHost ? (
         <div className="flex flex-wrap gap-2">
           <Button type="button" disabled={busy} onClick={() => void mockMatch()}>
             Host: add mock match scores
           </Button>
-          <span className="text-xs text-neutral-500 self-center">MVP placeholder until CricAPI wiring.</span>
+          <span className="text-xs text-neutral-500 self-center">CricAPI → map scorecard → POST with performances.</span>
         </div>
       ) : null}
       {loading ? <p className="text-sm text-neutral-500">Loading scores…</p> : null}

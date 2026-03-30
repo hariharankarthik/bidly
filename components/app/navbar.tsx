@@ -34,6 +34,9 @@ export async function Navbar() {
           <Link href="/practice" className={navLink}>
             Practice
           </Link>
+          <Link href="/scoring" className={navLink}>
+            Scoring
+          </Link>
           <Link href="/profile" className={navLink}>
             Profile
           </Link>
