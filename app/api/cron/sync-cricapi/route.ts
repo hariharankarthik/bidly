@@ -135,6 +135,10 @@ export async function GET(req: NextRequest) {
     // MVP: pull first page of currentMatches (offset=0). If your match list is large, increase offsets.
     const raw = await fetchCurrentMatchesFromCricApi(cricApiKey, 0);
     matchIds = extractUniqueIdsFromCurrentMatches(raw, matchDatePrefix, teamSubstrings);
+    // Fallback: if CricAPI date format differs, retry without date filtering.
+    if (!matchIds.length) {
+      matchIds = extractUniqueIdsFromCurrentMatches(raw, "", teamSubstrings);
+    }
   }
 
   const matchDate = process.env.CRICAPI_DAILY_MATCH_DATE ?? new Date().toISOString().slice(0, 10);
