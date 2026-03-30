@@ -2,11 +2,28 @@
 
 Real-time multiplayer auction rooms and season-long fantasy leagues (IPL-first).
 
-**Remote:** [github.com/hariharankarthik/auctionarena](https://github.com/hariharankarthik/auctionarena)
+**Repository:** [github.com/hariharankarthik/auctionarena](https://github.com/hariharankarthik/auctionarena)
 
-This project is **not** part of any GitLab analytics repo. If you keep a copy inside an `analytics-ml` worktree, that parent repo should list `auctionarena/` in `.gitignore` so only this Git repository tracks these files.
+Use this folder as your **Cursor / VS Code project root** — it is not part of any other monorepo.
 
-## Clone & run
+## Push to GitHub (first time)
+
+`origin` is already set to `https://github.com/hariharankarthik/auctionarena.git`. From this directory:
+
+```bash
+git push -u origin main
+```
+
+If HTTPS asks for credentials, use a [Personal Access Token](https://github.com/settings/tokens) as the password, or switch to SSH:
+
+```bash
+git remote set-url origin git@github.com:hariharankarthik/auctionarena.git
+git push -u origin main
+```
+
+Or sign in with [GitHub CLI](https://cli.github.com/): `gh auth login` then `git push -u origin main`.
+
+## Clone & run (on another machine)
 
 ```bash
 git clone https://github.com/hariharankarthik/auctionarena.git
@@ -18,20 +35,6 @@ npm run dev
 
 Requires **Node.js 20+**.
 
-## Git remotes
-
-```bash
-git remote -v
-# origin  https://github.com/hariharankarthik/auctionarena.git (fetch)
-# origin  https://github.com/hariharankarthik/auctionarena.git (push)
-```
-
-SSH:
-
-```bash
-git remote set-url origin git@github.com:hariharankarthik/auctionarena.git
-```
-
 ## Deploy
 
-Connect the GitHub repo to Vercel and set Supabase / CricAPI environment variables in the Vercel project settings.
+Connect this GitHub repo to Vercel and add Supabase / CricAPI environment variables in the Vercel project settings.
