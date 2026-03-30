@@ -5,6 +5,7 @@ import {
   type PlayerMatchStats,
 } from "@/lib/fantasy-scoring";
 import { effectivePointsWithLineup } from "@/lib/fantasy-scoring/lineup-multipliers";
+import { parseCricApiMatchUuid } from "@/lib/cricapi/match-id";
 import {
   extractPerformancesFromCricApiJson,
   fetchCricApiScorecardJson,
@@ -86,6 +87,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "league_id, match_id, match_date required" }, { status: 400 });
   }
 
+  let effectiveMatchId = String(match_id).trim();
+  if (cricapi_match_id && String(cricapi_match_id).trim()) {
+    try {
+      effectiveMatchId = parseCricApiMatchUuid(String(cricapi_match_id));
+    } catch (e) {
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : "Invalid CricAPI match id" },
+        { status: 400 },
+      );
+    }
+  }
+
   const { data: league, error: lErr } = await supabase
     .from("fantasy_leagues")
     .select("id, room_id, sport_id")
@@ -113,7 +126,7 @@ export async function POST(req: NextRequest) {
   if (cricapi_match_id && String(cricapi_match_id).trim()) {
     cricapiUsed = true;
     try {
-      const raw = await fetchCricApiScorecardJson(String(cricapi_match_id).trim());
+      const raw = await fetchCricApiScorecardJson(effectiveMatchId);
       let extracted = extractPerformancesFromCricApiJson(raw);
       extracted = mergeBowlingFromCricApiJson(extracted, raw);
       const mapped = await mapCricApiNamesToPerformances(supabase, league.sport_id, extracted);
@@ -190,7 +203,7 @@ export async function POST(req: NextRequest) {
       return {
         league_id,
         team_id: t.id,
-        match_id: String(match_id),
+        match_id: String(effectiveMatchId),
         match_date,
         total_points: Math.round(b.total * 100) / 100,
         breakdown: {

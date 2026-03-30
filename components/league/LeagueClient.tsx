@@ -28,6 +28,7 @@ export function LeagueClient({
   const [busy, setBusy] = useState(false);
   const { loading: cricBusy, syncFromCricApi } = useCricApiMatchScoring();
   const [cricId, setCricId] = useState("");
+  const [cricMatchDate, setCricMatchDate] = useState(() => new Date().toISOString().slice(0, 10));
 
   async function mockMatch() {
     if (!leagueId) return;
@@ -88,14 +89,27 @@ export function LeagueClient({
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
             <div className="min-w-0 flex-1 space-y-1">
               <label htmlFor="cricapi-match-id" className="text-xs text-neutral-500">
-                CricAPI match <code className="text-neutral-400">id</code> (from dashboard)
+                CricAPI match <code className="text-neutral-400">id</code> (from <code className="text-neutral-400">currentMatches</code> →{" "}
+                <code className="text-neutral-400">data[].id</code>)
               </label>
               <Input
                 id="cricapi-match-id"
                 value={cricId}
                 onChange={(e) => setCricId(e.target.value)}
-                placeholder="e.g. match UUID from cricapi.com"
+                placeholder="55fe0f15-6eb0-4ad5-835b-5564be4f6a21"
                 className="font-mono text-sm"
+              />
+            </div>
+            <div className="min-w-[10rem] space-y-1">
+              <label htmlFor="cricapi-match-date" className="text-xs text-neutral-500">
+                Match date (for leaderboard / backfill)
+              </label>
+              <Input
+                id="cricapi-match-date"
+                type="date"
+                value={cricMatchDate}
+                onChange={(e) => setCricMatchDate(e.target.value)}
+                className="text-sm"
               />
             </div>
             <Button
@@ -106,12 +120,12 @@ export function LeagueClient({
                 void (async () => {
                   if (!leagueId) return;
                   try {
-                    const matchId = `cric-${Date.now()}`;
+                    const mid = cricId.trim();
                     const data = await syncFromCricApi({
                       leagueId,
-                      matchId,
-                      matchDate: new Date().toISOString().slice(0, 10),
-                      cricapiMatchId: cricId,
+                      matchId: mid,
+                      matchDate: cricMatchDate.slice(0, 10),
+                      cricapiMatchId: mid,
                     });
                     toast.success(`Synced · ${data?.performances_applied ?? 0} player rows applied`);
                     if (data?.unmatched_names?.length) {
@@ -129,7 +143,10 @@ export function LeagueClient({
           </div>
           <p className="text-xs text-neutral-500">
             Set <code className="rounded bg-neutral-800 px-1">CRICAPI_KEY</code> on Vercel. Server calls{" "}
-            <code className="rounded bg-neutral-800 px-1">api.cricapi.com</code> — key never ships to the browser.
+            <code className="rounded bg-neutral-800 px-1">api.cricapi.com</code> — key never ships to the browser. Use the
+            same UUID as cron (<code className="rounded bg-neutral-800 px-1">match_id</code> in DB). For a past game, set
+            match date to that day. If points look wrong, check Starting XI / C·VC and name matches in Supabase{" "}
+            <code className="rounded bg-neutral-800 px-1">players</code> vs CricAPI scorecard names.
           </p>
         </div>
       ) : null}

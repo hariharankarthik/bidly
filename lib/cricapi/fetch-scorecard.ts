@@ -1,4 +1,5 @@
 import type { BattingStats, BowlingStats, PlayerMatchStats } from "@/lib/fantasy-scoring";
+import { parseCricApiMatchUuid } from "@/lib/cricapi/match-id";
 
 const BASE = "https://api.cricapi.com/v1";
 
@@ -134,7 +135,8 @@ export async function fetchCricApiScorecardJson(matchId: string): Promise<unknow
   if (!apiKey) {
     throw new Error("CRICAPI_KEY is not set. Add it in Vercel / .env.local.");
   }
-  const url = `${BASE}/match_scorecard?apikey=${encodeURIComponent(apiKey)}&id=${encodeURIComponent(matchId)}`;
+  const id = parseCricApiMatchUuid(matchId);
+  const url = `${BASE}/match_scorecard?apikey=${encodeURIComponent(apiKey)}&id=${encodeURIComponent(id)}`;
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) {
     const t = await res.text();
