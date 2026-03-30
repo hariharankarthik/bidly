@@ -168,7 +168,7 @@ export function ScoringRulesClient() {
             <li>Run-out dismissals do not count as bowling wickets for the bowler.</li>
             <li>Overthrows count as batting runs; boundary bonuses do not apply to overthrow boundaries.</li>
             <li>Substitute fielder catches: no fantasy points (needs a flag in the mapper when CricAPI exposes it).</li>
-            <li>Captain 2× / Vice-captain 1.5× apply after base points when those features ship.</li>
+            <li>Captain 2× / Vice-captain 1.5× apply after base points for players in your starting XI (set on **Results** after the auction).</li>
           </ul>
         </Section>
       </div>

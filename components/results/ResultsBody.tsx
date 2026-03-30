@@ -5,6 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LineupPanel } from "./LineupPanel";
 import { formatCurrencyLakhsToCr } from "@/lib/utils";
 
 export type ResultPlayer = {
@@ -18,6 +19,7 @@ export type ResultPlayer = {
 
 export type ResultTeamBlock = {
   teamId: string;
+  ownerId: string;
   teamName: string;
   teamColor: string;
   spend: number;
@@ -26,16 +28,21 @@ export type ResultTeamBlock = {
   roles: Record<string, number>;
   overseas: number;
   players: ResultPlayer[];
+  startingXiPlayerIds: string[];
+  captainPlayerId: string | null;
+  viceCaptainPlayerId: string | null;
 };
 
 export function ResultsBody({
   roomId,
   roomName,
   teams,
+  myUserId,
 }: {
   roomId: string;
   roomName: string;
   teams: ResultTeamBlock[];
+  myUserId: string;
 }) {
   const shareRef = useRef<HTMLDivElement>(null);
   const [sharing, setSharing] = useState(false);
@@ -165,6 +172,15 @@ export function ResultsBody({
                 </li>
               ))}
             </ul>
+            <LineupPanel
+              teamId={team.teamId}
+              ownerId={team.ownerId}
+              myUserId={myUserId}
+              players={team.players}
+              initialXi={team.startingXiPlayerIds}
+              captainPlayerId={team.captainPlayerId}
+              viceCaptainPlayerId={team.viceCaptainPlayerId}
+            />
           </CardContent>
         </Card>
       ))}

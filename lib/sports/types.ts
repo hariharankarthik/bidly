@@ -67,6 +67,10 @@ export type AuctionTeam = {
   overseas_count: number;
   is_ready: boolean;
   created_at: string;
+  /** Fantasy: up to 11; empty = all squad eligible for match points until set. */
+  starting_xi_player_ids?: string[] | null;
+  captain_player_id?: string | null;
+  vice_captain_player_id?: string | null;
 };
 
 export type BidRow = {

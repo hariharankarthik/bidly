@@ -1,25 +1,68 @@
 import { createClient } from "@/lib/supabase/server";
 import { getSportConfig } from "@/lib/sports";
-import { scorePlayerMatch, type PlayerMatchStats } from "@/lib/fantasy-scoring";
+import {
+  scorePlayerMatch,
+  type PlayerMatchStats,
+} from "@/lib/fantasy-scoring";
+import { effectivePointsWithLineup } from "@/lib/fantasy-scoring/lineup-multipliers";
+import {
+  extractPerformancesFromCricApiJson,
+  fetchCricApiScorecardJson,
+  mergeBowlingFromCricApiJson,
+  normalizeName,
+} from "@/lib/cricapi/fetch-scorecard";
 import { NextRequest, NextResponse } from "next/server";
 
 type PerformanceInput = {
   player_id: string;
 } & PlayerMatchStats;
 
-function mergeBreakdown(into: Record<string, number>, add: Record<string, number>) {
-  for (const [k, v] of Object.entries(add)) {
-    into[k] = (into[k] ?? 0) + v;
+type TeamLineupRow = {
+  id: string;
+  starting_xi_player_ids: string[] | null;
+  captain_player_id: string | null;
+  vice_captain_player_id: string | null;
+};
+
+async function mapCricApiNamesToPerformances(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  sportId: string,
+  rows: { playerName: string; stats: PlayerMatchStats }[],
+): Promise<{ performances: PerformanceInput[]; unmatched: string[] }> {
+  const { data: players, error } = await supabase.from("players").select("id, name").eq("sport_id", sportId);
+  if (error) throw new Error(error.message);
+  const list = players ?? [];
+  const performances: PerformanceInput[] = [];
+  const unmatched: string[] = [];
+
+  for (const row of rows) {
+    const key = normalizeName(row.playerName);
+    const exact = list.find((p) => normalizeName(p.name) === key);
+    const fuzzy =
+      exact ??
+      list.find(
+        (p) =>
+          key.length >= 4 &&
+          (normalizeName(p.name).includes(key) || key.includes(normalizeName(p.name))),
+      );
+    if (!fuzzy) {
+      unmatched.push(row.playerName);
+      continue;
+    }
+    performances.push({ player_id: fuzzy.id, ...row.stats });
   }
+
+  return { performances, unmatched };
 }
 
 /**
- * Host-only. Two modes:
- * 1) Default: mock points per team (MVP smoke test).
- * 2) `performances`: array of { player_id, batting?, bowling?, fielding? } — uses auctionroom-style engine;
- *    sums points per `auction_teams` using sold `auction_results` (player → team).
+ * Host-only.
+ * - Default: mock points per team.
+ * - `performances`: manual stats per `player_id`.
+ * - `cricapi_match_id`: server fetches CricAPI scorecard (needs CRICAPI_KEY), maps names → DB players.
  *
- * CricAPI / external feed: map scorecard → `performances`, then POST here (or call from a server cron).
+ * Starting XI: if a team sets `starting_xi_player_ids`, only those players count; substitutes → 0.
+ * If XI is empty, all squad players with stats count. Captain 2×, vice-captain 1.5× on effective points.
  */
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -33,8 +76,12 @@ export async function POST(req: NextRequest) {
     match_id?: string;
     match_date?: string;
     performances?: PerformanceInput[];
+    cricapi_match_id?: string;
   };
-  const { league_id, match_id, match_date, performances } = body;
+  const { league_id, match_id, match_date } = body;
+  let { performances } = body;
+  const { cricapi_match_id } = body;
+
   if (!league_id || !match_id || !match_date) {
     return NextResponse.json({ error: "league_id, match_id, match_date required" }, { status: 400 });
   }
@@ -52,8 +99,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { data: teams } = await supabase.from("auction_teams").select("id").eq("room_id", league.room_id);
-  const teamList = teams ?? [];
+  const { data: teams, error: tmErr } = await supabase
+    .from("auction_teams")
+    .select("id, starting_xi_player_ids, captain_player_id, vice_captain_player_id")
+    .eq("room_id", league.room_id);
+
+  if (tmErr) return NextResponse.json({ error: tmErr.message }, { status: 500 });
+  const teamList = (teams ?? []) as TeamLineupRow[];
+
+  let unmatchedNames: string[] | undefined;
+  let cricapiUsed = false;
+
+  if (cricapi_match_id && String(cricapi_match_id).trim()) {
+    cricapiUsed = true;
+    try {
+      const raw = await fetchCricApiScorecardJson(String(cricapi_match_id).trim());
+      let extracted = extractPerformancesFromCricApiJson(raw);
+      extracted = mergeBowlingFromCricApiJson(extracted, raw);
+      const mapped = await mapCricApiNamesToPerformances(supabase, league.sport_id, extracted);
+      performances = mapped.performances;
+      unmatchedNames = mapped.unmatched.length ? mapped.unmatched : undefined;
+    } catch (e) {
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : "CricAPI fetch failed" },
+        { status: 502 },
+      );
+    }
+  }
 
   if (Array.isArray(performances) && performances.length > 0) {
     const { data: soldRows, error: srErr } = await supabase
@@ -69,9 +141,12 @@ export async function POST(req: NextRequest) {
       if (r.player_id && r.team_id) playerToTeam.set(r.player_id, r.team_id);
     }
 
-    const agg = new Map<string, { total: number; breakdown: Record<string, number> }>();
+    const lineupByTeam = new Map<string, TeamLineupRow>();
+    for (const t of teamList) lineupByTeam.set(t.id, t);
+
+    const agg = new Map<string, { total: number; breakdown: Record<string, number>; detail: object[] }>();
     for (const t of teamList) {
-      agg.set(t.id, { total: 0, breakdown: {} });
+      agg.set(t.id, { total: 0, breakdown: {}, detail: [] });
     }
 
     let applied = 0;
@@ -87,11 +162,26 @@ export async function POST(req: NextRequest) {
       };
       if (!stats.batting && !stats.bowling && !stats.fielding) continue;
 
-      const { total, breakdown } = scorePlayerMatch(stats);
+      const { total: baseTotal } = scorePlayerMatch(stats);
+      const teamRow = lineupByTeam.get(teamId);
+      const xi = teamRow?.starting_xi_player_ids ?? [];
+      const { effective, counted, multiplier } = effectivePointsWithLineup(baseTotal, row.player_id, {
+        startingXiPlayerIds: xi.filter(Boolean),
+        captainPlayerId: teamRow?.captain_player_id ?? null,
+        viceCaptainPlayerId: teamRow?.vice_captain_player_id ?? null,
+      });
+
+      if (!counted) continue;
+
       const bucket = agg.get(teamId);
       if (!bucket) continue;
-      bucket.total += total;
-      mergeBreakdown(bucket.breakdown, breakdown);
+      bucket.total += effective;
+      bucket.detail.push({
+        player_id: row.player_id,
+        base_points: baseTotal,
+        multiplier,
+        effective_points: effective,
+      });
       applied++;
     }
 
@@ -103,7 +193,13 @@ export async function POST(req: NextRequest) {
         match_id: String(match_id),
         match_date,
         total_points: Math.round(b.total * 100) / 100,
-        breakdown: { ...b.breakdown, source: "engine_v1", performances_applied: applied },
+        breakdown: {
+          ...b.breakdown,
+          source: cricapiUsed ? "cricapi_v1" : "engine_v1",
+          performances_applied: applied,
+          player_lines: b.detail.slice(0, 40),
+          ...(unmatchedNames?.length ? { cricapi_unmatched_names: unmatchedNames } : {}),
+        },
       };
     });
 
@@ -112,13 +208,26 @@ export async function POST(req: NextRequest) {
     });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    return NextResponse.json({ success: true, updated: rows.length, mode: "performances", performances_applied: applied });
+    return NextResponse.json({
+      success: true,
+      updated: rows.length,
+      mode: cricapiUsed ? "cricapi" : "performances",
+      performances_applied: applied,
+      ...(unmatchedNames?.length ? { unmatched_names: unmatchedNames } : {}),
+    });
+  }
+
+  if (cricapiUsed) {
+    return NextResponse.json(
+      { error: "CricAPI returned no mappable players — check names vs your player pool or CRICAPI_KEY." },
+      { status: 400 },
+    );
   }
 
   const scoring = getSportConfig(league.sport_id)?.scoring ?? [];
   const playingXi = scoring.find((s) => s.action === "playing_xi");
 
-  const rows = teamList.map((t, i) => {
+  const mockRows = teamList.map((t, i) => {
     const base = 20 + (i + 1) * 3 + (match_id.length % 7);
     const breakdown = {
       mock: base,
@@ -136,10 +245,10 @@ export async function POST(req: NextRequest) {
     };
   });
 
-  const { error } = await supabase.from("fantasy_scores").upsert(rows, {
+  const { error } = await supabase.from("fantasy_scores").upsert(mockRows, {
     onConflict: "league_id,team_id,match_id",
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ success: true, updated: rows.length, mode: "mock" });
+  return NextResponse.json({ success: true, updated: mockRows.length, mode: "mock" });
 }

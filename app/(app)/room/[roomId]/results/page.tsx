@@ -5,11 +5,19 @@ import { ResultsBody, type ResultTeamBlock, type ResultPlayer } from "@/componen
 export default async function ResultsPage({ params }: { params: Promise<{ roomId: string }> }) {
   const { roomId } = await params;
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { data: room, error } = await supabase.from("auction_rooms").select("*").eq("id", roomId).single();
   if (error || !room) notFound();
 
-  const { data: teams } = await supabase.from("auction_teams").select("*").eq("room_id", roomId);
+  const { data: teams } = await supabase
+    .from("auction_teams")
+    .select(
+      "id, owner_id, team_name, team_color, remaining_purse, players_bought, overseas_count, is_ready, created_at, starting_xi_player_ids, captain_player_id, vice_captain_player_id",
+    )
+    .eq("room_id", roomId);
   const { data: results } = await supabase.from("auction_results").select("*").eq("room_id", roomId);
   const playerIds = [...new Set((results ?? []).map((r) => r.player_id))];
   const { data: players } =
@@ -49,6 +57,7 @@ export default async function ResultsPage({ params }: { params: Promise<{ roomId
     });
     return {
       teamId: team.id,
+      ownerId: team.owner_id,
       teamName: team.team_name,
       teamColor: team.team_color,
       spend,
@@ -57,8 +66,13 @@ export default async function ResultsPage({ params }: { params: Promise<{ roomId
       roles,
       overseas,
       players: plist,
+      startingXiPlayerIds: Array.isArray(team.starting_xi_player_ids) ? team.starting_xi_player_ids : [],
+      captainPlayerId: team.captain_player_id ?? null,
+      viceCaptainPlayerId: team.vice_captain_player_id ?? null,
     };
   });
 
-  return <ResultsBody roomId={roomId} roomName={room.name} teams={blocks} />;
+  return (
+    <ResultsBody roomId={roomId} roomName={room.name} teams={blocks} myUserId={user?.id ?? ""} />
+  );
 }
