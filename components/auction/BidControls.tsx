@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { nextBidAmount } from "@/lib/auction-engine";
+import { playSound } from "@/lib/sounds";
 import { formatCurrencyLakhsToCr } from "@/lib/utils";
 import { useAuctionUi } from "@/lib/store/auction-ui";
 
@@ -42,6 +43,7 @@ export function BidControls({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Bid failed");
+      playSound("bid");
       toast.success(`Bid ${formatCurrencyLakhsToCr(amount)}`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Bid failed");

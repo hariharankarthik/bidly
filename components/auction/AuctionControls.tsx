@@ -4,10 +4,18 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
-export function AuctionControls({ roomId }: { roomId: string }) {
+type FinalizeInfo = { wasSold: boolean; completed: boolean };
+
+export function AuctionControls({
+  roomId,
+  onLotFinalized,
+}: {
+  roomId: string;
+  onLotFinalized?: (info: FinalizeInfo) => void;
+}) {
   const [loading, setLoading] = useState<string | null>(null);
 
-  async function post(url: string, body: object) {
+  async function post(url: string, body: object): Promise<Record<string, unknown> | null> {
     setLoading(url);
     try {
       const res = await fetch(url, {
@@ -15,10 +23,10 @@ export function AuctionControls({ roomId }: { roomId: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Request failed");
+      const data = (await res.json()) as Record<string, unknown>;
+      if (!res.ok) throw new Error(String(data.error ?? "Request failed"));
       toast.success("Updated");
-      return data as { completed?: boolean };
+      return data;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed");
       return null;
@@ -27,13 +35,18 @@ export function AuctionControls({ roomId }: { roomId: string }) {
     }
   }
 
+  function parseFinalize(data: Record<string, unknown> | null): FinalizeInfo | null {
+    if (!data || typeof data.completed !== "boolean" || !("was_sold" in data)) return null;
+    return { wasSold: Boolean(data.was_sold), completed: data.completed };
+  }
+
   return (
     <div className="flex flex-wrap gap-2">
       <Button
         size="sm"
         variant="secondary"
         disabled={!!loading}
-        onClick={() => post("/api/auction/pause", { room_id: roomId, paused: true })}
+        onClick={() => void post("/api/auction/pause", { room_id: roomId, paused: true })}
       >
         Pause
       </Button>
@@ -41,7 +54,7 @@ export function AuctionControls({ roomId }: { roomId: string }) {
         size="sm"
         variant="secondary"
         disabled={!!loading}
-        onClick={() => post("/api/auction/pause", { room_id: roomId, paused: false })}
+        onClick={() => void post("/api/auction/pause", { room_id: roomId, paused: false })}
       >
         Resume
       </Button>
@@ -49,7 +62,11 @@ export function AuctionControls({ roomId }: { roomId: string }) {
         size="sm"
         variant="outline"
         disabled={!!loading}
-        onClick={() => post("/api/auction/unsold", { room_id: roomId })}
+        onClick={async () => {
+          const data = await post("/api/auction/unsold", { room_id: roomId });
+          const fin = parseFinalize(data);
+          if (fin) onLotFinalized?.(fin);
+        }}
       >
         Unsold
       </Button>
@@ -57,7 +74,7 @@ export function AuctionControls({ roomId }: { roomId: string }) {
         size="sm"
         variant="outline"
         disabled={!!loading}
-        onClick={() => post("/api/auction/next-player", { room_id: roomId })}
+        onClick={() => void post("/api/auction/next-player", { room_id: roomId })}
       >
         Next
       </Button>
@@ -65,8 +82,10 @@ export function AuctionControls({ roomId }: { roomId: string }) {
         size="sm"
         disabled={!!loading}
         onClick={async () => {
-          const r = await post("/api/auction/sold", { room_id: roomId });
-          if (r?.completed) window.location.href = `/room/${roomId}/results`;
+          const data = await post("/api/auction/sold", { room_id: roomId });
+          const fin = parseFinalize(data);
+          if (fin) onLotFinalized?.(fin);
+          if (fin?.completed) window.location.href = `/room/${roomId}/results`;
         }}
       >
         Sold / End lot

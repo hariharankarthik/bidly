@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuctionRoom } from "@/hooks/useAuctionRoom";
 import { useTimer } from "@/hooks/useTimer";
 import { createClient } from "@/lib/supabase/client";
 import type { PlayerRow, RoomRuntimeConfig } from "@/lib/sports/types";
+import { playSound } from "@/lib/sounds";
 import { formatCurrencyLakhsToCr } from "@/lib/utils";
 import { PlayerCard } from "./PlayerCard";
 import { BidControls } from "./BidControls";
@@ -14,6 +15,7 @@ import { BidFeed } from "./BidFeed";
 import { PurseTracker } from "./PurseTracker";
 import { SquadTracker } from "./SquadTracker";
 import { TimerDisplay } from "./Timer";
+import { SoldOverlay } from "./SoldOverlay";
 import { AuctionControls } from "./AuctionControls";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,6 +40,8 @@ export function AuctionRoomView({
 
   const [player, setPlayer] = useState<PlayerRow | null>(null);
   const [mySquad, setMySquad] = useState<PlayerRow[]>([]);
+  const [soldOverlay, setSoldOverlay] = useState<{ open: boolean; label: string }>({ open: false, label: "" });
+  const prevTick = useRef<number | null>(null);
 
   useEffect(() => {
     if (!loading && room && room.status !== "live") {
@@ -111,6 +115,19 @@ export function AuctionRoomView({
     }
   }, [timeLeft, isHost, room?.status]);
 
+  useEffect(() => {
+    if (timeLeft <= 0) {
+      prevTick.current = timeLeft;
+      return;
+    }
+    const prev = prevTick.current;
+    if (prev !== null) {
+      if (prev > 10 && timeLeft <= 10) playSound("timerWarning");
+      if (prev > 5 && timeLeft <= 5) playSound("timerWarning");
+    }
+    prevTick.current = timeLeft;
+  }, [timeLeft]);
+
   if (loading || !room) {
     return <p className="p-6 text-neutral-400">Loading auction…</p>;
   }
@@ -121,6 +138,7 @@ export function AuctionRoomView({
 
   return (
     <div className="relative mx-auto max-w-6xl gap-6 p-4 lg:grid lg:grid-cols-[1.1fr_0.9fr]">
+      <SoldOverlay open={soldOverlay.open} label={soldOverlay.label} />
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -163,7 +181,14 @@ export function AuctionRoomView({
         {isHost ? (
           <div className="space-y-2">
             <p className="text-xs uppercase text-neutral-500">Host controls</p>
-            <AuctionControls roomId={roomId} />
+            <AuctionControls
+              roomId={roomId}
+              onLotFinalized={(info) => {
+                setSoldOverlay({ open: true, label: info.wasSold ? "SOLD!" : "UNSOLD" });
+                if (info.wasSold) playSound("gavel");
+                window.setTimeout(() => setSoldOverlay((s) => ({ ...s, open: false })), 1400);
+              }}
+            />
           </div>
         ) : null}
       </div>

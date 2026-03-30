@@ -28,5 +28,5 @@ export async function POST(req: NextRequest) {
   if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 });
 
   const { completed } = await advanceLotAfterResult(supabase, room_id, room);
-  return NextResponse.json({ success: true, completed });
+  return NextResponse.json({ success: true, completed, was_sold: false });
 }

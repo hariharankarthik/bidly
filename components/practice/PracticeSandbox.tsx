@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { decideAiBid, type AiDifficulty } from "@/lib/ai-bidder";
 import { IPL_2026 } from "@/lib/sports/ipl";
 import { Button } from "@/components/ui/button";
@@ -24,65 +24,59 @@ type TeamSim = {
   roleCounts: Record<string, number>;
 };
 
+const INITIAL_TEAMS: TeamSim[] = [
+  {
+    id: "you",
+    label: "You",
+    remaining_purse: 8000,
+    players_bought: 2,
+    overseas_count: 1,
+    roleCounts: { BAT: 1, BOWL: 1, ALL: 0, WK: 0 },
+  },
+  {
+    id: "ai1",
+    label: "AI North",
+    remaining_purse: 8200,
+    players_bought: 2,
+    overseas_count: 0,
+    roleCounts: { BAT: 2, BOWL: 0, ALL: 0, WK: 0 },
+  },
+  {
+    id: "ai2",
+    label: "AI South",
+    remaining_purse: 7800,
+    players_bought: 2,
+    overseas_count: 2,
+    roleCounts: { BAT: 0, BOWL: 2, ALL: 0, WK: 0 },
+  },
+];
+
 export function PracticeSandbox() {
   const [difficulty, setDifficulty] = useState<AiDifficulty>("medium");
   const [lotIndex, setLotIndex] = useState(0);
   const [currentBid, setCurrentBid] = useState(LOTS[0]!.base);
   const [log, setLog] = useState<string[]>([]);
+  const [autoRun, setAutoRun] = useState(false);
+  const [simTeams] = useState<TeamSim[]>(() => JSON.parse(JSON.stringify(INITIAL_TEAMS)) as TeamSim[]);
 
-  const teams = useMemo<TeamSim[]>(
-    () => [
-      {
-        id: "you",
-        label: "You",
-        remaining_purse: 8000,
-        players_bought: 2,
-        overseas_count: 1,
-        roleCounts: { BAT: 1, BOWL: 1, ALL: 0, WK: 0 },
-      },
-      {
-        id: "ai1",
-        label: "AI North",
-        remaining_purse: 8200,
-        players_bought: 2,
-        overseas_count: 0,
-        roleCounts: { BAT: 2, BOWL: 0, ALL: 0, WK: 0 },
-      },
-      {
-        id: "ai2",
-        label: "AI South",
-        remaining_purse: 7800,
-        players_bought: 2,
-        overseas_count: 2,
-        roleCounts: { BAT: 0, BOWL: 2, ALL: 0, WK: 0 },
-      },
-    ],
-    [],
-  );
-
-  const [simTeams, setSimTeams] = useState(teams);
   const lot = LOTS[lotIndex % LOTS.length]!;
   const player = { is_overseas: lot.is_overseas, role: lot.role };
 
   const pushLog = useCallback((line: string) => {
-    setLog((prev) => [line, ...prev].slice(0, 12));
+    setLog((prev) => [line, ...prev].slice(0, 14));
   }, []);
 
-  const resetLot = useCallback(() => {
-    setCurrentBid(lot.base);
-    pushLog(`--- New lot: ${lot.name} (${lot.role}) base ${formatCurrencyLakhsToCr(lot.base)}`);
-  }, [lot, pushLog]);
-
   const runAiTick = useCallback(() => {
-    setSimTeams((prev) => {
-      const next = JSON.parse(JSON.stringify(prev)) as TeamSim[];
-      for (const t of next) {
+    setCurrentBid((cb) => {
+      let next = cb;
+      const lines: string[] = [];
+      for (const t of simTeams) {
         if (t.id === "you") continue;
         const bid = decideAiBid(
           {
             team: t,
             player,
-            currentBid,
+            currentBid: next,
             basePrice: lot.base,
             config: IPL_2026,
             roleCounts: t.roleCounts,
@@ -90,26 +84,45 @@ export function PracticeSandbox() {
           difficulty,
         );
         if (bid) {
-          pushLog(`${t.label} bid ${formatCurrencyLakhsToCr(bid)}`);
-          setCurrentBid(bid);
+          lines.push(`${t.label} bid ${formatCurrencyLakhsToCr(bid)}`);
+          next = bid;
         }
       }
+      if (lines.length) setLog((prev) => [...lines, ...prev].slice(0, 14));
       return next;
     });
-  }, [currentBid, difficulty, lot.base, player, pushLog]);
+  }, [difficulty, lot.base, player, simTeams]);
+
+  const runAiTickRef = useRef(runAiTick);
+  runAiTickRef.current = runAiTick;
+
+  useEffect(() => {
+    if (!autoRun) return;
+    const id = window.setInterval(() => runAiTickRef.current(), 2000);
+    return () => window.clearInterval(id);
+  }, [autoRun]);
+
+  const resetLot = useCallback(() => {
+    setCurrentBid(lot.base);
+    pushLog(`--- New lot: ${lot.name} (${lot.role}) base ${formatCurrencyLakhsToCr(lot.base)}`);
+  }, [lot, pushLog]);
 
   const humanBid = useCallback(() => {
-    const inc = 20;
-    const next = currentBid + inc;
-    setCurrentBid(next);
-    pushLog(`You bid ${formatCurrencyLakhsToCr(next)}`);
-  }, [currentBid, pushLog]);
+    setCurrentBid((c) => {
+      const next = c + 20;
+      pushLog(`You bid ${formatCurrencyLakhsToCr(next)}`);
+      return next;
+    });
+  }, [pushLog]);
 
   const nextLot = useCallback(() => {
     setLotIndex((i) => i + 1);
-    setCurrentBid(LOTS[(lotIndex + 1) % LOTS.length]!.base);
     pushLog("Lot cleared — next player.");
-  }, [lotIndex, pushLog]);
+  }, [pushLog]);
+
+  useEffect(() => {
+    setCurrentBid(LOTS[lotIndex % LOTS.length]!.base);
+  }, [lotIndex]);
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -125,6 +138,10 @@ export function PracticeSandbox() {
               </Button>
             ))}
           </div>
+          <label className="flex cursor-pointer items-center gap-2 text-xs text-neutral-400">
+            <input type="checkbox" checked={autoRun} onChange={(e) => setAutoRun(e.target.checked)} />
+            Auto AI bids every 2s (uses same engine as live validation)
+          </label>
           <p className="text-lg font-semibold text-white">{lot.name}</p>
           <p>
             Current bid: <span className="text-emerald-300">{formatCurrencyLakhsToCr(currentBid)}</span>

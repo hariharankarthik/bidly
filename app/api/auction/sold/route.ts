@@ -19,6 +19,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No active player" }, { status: 400 });
   }
 
+  const wasSold = Boolean(room.current_bidder_team_id);
+
   if (!room.current_bidder_team_id) {
     const { error: insErr } = await supabase.from("auction_results").insert({
       room_id,
@@ -50,5 +52,5 @@ export async function POST(req: NextRequest) {
   }
 
   const { completed } = await advanceLotAfterResult(supabase, room_id, room);
-  return NextResponse.json({ success: true, completed });
+  return NextResponse.json({ success: true, completed, was_sold: wasSold });
 }
