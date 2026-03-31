@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 const MAX_XI = 11;
+const MAX_OVERSEAS_XI_IPL = 4;
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -29,6 +30,13 @@ export async function POST(req: NextRequest) {
   if (tErr || !team) return NextResponse.json({ error: "Team not found" }, { status: 404 });
   if (team.owner_id !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
+  const { data: room, error: rErr } = await supabase
+    .from("auction_rooms")
+    .select("sport_id")
+    .eq("id", team.room_id)
+    .single();
+  if (rErr || !room) return NextResponse.json({ error: "Room not found" }, { status: 404 });
+
   const { data: squadRows, error: sErr } = await supabase
     .from("auction_results")
     .select("player_id")
@@ -42,6 +50,21 @@ export async function POST(req: NextRequest) {
   for (const pid of xi) {
     if (!squad.has(pid)) {
       return NextResponse.json({ error: "Starting XI must be players on your squad" }, { status: 400 });
+    }
+  }
+
+  if (room.sport_id === "ipl_2026" && xi.length > 0) {
+    const { data: xiPlayers, error: xErr } = await supabase
+      .from("players")
+      .select("id, is_overseas")
+      .in("id", xi);
+    if (xErr) return NextResponse.json({ error: xErr.message }, { status: 500 });
+    const overseas = (xiPlayers ?? []).filter((p) => p.is_overseas).length;
+    if (overseas > MAX_OVERSEAS_XI_IPL) {
+      return NextResponse.json(
+        { error: `Starting XI can include at most ${MAX_OVERSEAS_XI_IPL} overseas players` },
+        { status: 400 },
+      );
     }
   }
 

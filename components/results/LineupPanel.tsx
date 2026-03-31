@@ -7,6 +7,7 @@ import type { ResultPlayer } from "./ResultsBody";
 import { PlayerMeta } from "@/components/player/PlayerMeta";
 
 const MAX = 11;
+const MAX_OVERSEAS_XI_IPL = 4;
 
 export function LineupPanel({
   teamId,
@@ -49,6 +50,13 @@ export function LineupPanel({
   const squadIds = useMemo(() => new Set(players.map((p) => p.playerId)), [players]);
   const nameById = useMemo(() => new Map(players.map((p) => [p.playerId, p.name])), [players]);
   const maxStarters = squadIds.size ? Math.min(MAX, squadIds.size) : 0;
+  const overseasSelected = useMemo(() => {
+    let n = 0;
+    for (const p of players) {
+      if (p.isOverseas && xi.has(p.playerId)) n++;
+    }
+    return n;
+  }, [players, xi]);
   /** Footer count: live while editing; frozen to last save while locked so it matches “Saved lineup”. */
   const displayedStarterCount = locked && saved ? saved.xi.length : xi.size;
 
@@ -74,6 +82,11 @@ export function LineupPanel({
       } else {
         if (next.size >= maxStarters) {
           toast.error(`At most ${maxStarters} starter${maxStarters === 1 ? "" : "s"}`);
+          return prev;
+        }
+        const pick = players.find((p) => p.playerId === pid);
+        if (pick?.isOverseas && overseasSelected >= MAX_OVERSEAS_XI_IPL) {
+          toast.error(`At most ${MAX_OVERSEAS_XI_IPL} overseas players allowed in Starting XI`);
           return prev;
         }
         next.add(pid);
@@ -118,8 +131,20 @@ export function LineupPanel({
             1.5×.
           </p>
         </div>
-        <div className="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-200 ring-1 ring-blue-500/20">
-          {displayedStarterCount}/{maxStarters || MAX} selected
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-200 ring-1 ring-blue-500/20">
+            {displayedStarterCount}/{maxStarters || MAX} selected
+          </div>
+          <div
+            className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
+              overseasSelected > MAX_OVERSEAS_XI_IPL
+                ? "bg-red-500/10 text-red-200 ring-red-500/25"
+                : "bg-neutral-900/30 text-neutral-300 ring-white/10"
+            }`}
+            title={`Overseas in XI: ${overseasSelected}/${MAX_OVERSEAS_XI_IPL}`}
+          >
+            ✈️ {overseasSelected}/{MAX_OVERSEAS_XI_IPL}
+          </div>
         </div>
       </div>
 

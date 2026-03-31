@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PlayerMeta } from "@/components/player/PlayerMeta";
 
 const MAX = 11;
+const MAX_OVERSEAS_XI_IPL = 4;
 
 export type PrivateTeamPlayer = {
   playerId: string;
@@ -41,6 +42,13 @@ export function PrivateLineupPanel({
 
   const squadIds = useMemo(() => new Set(players.map((p) => p.playerId)), [players]);
   const maxStarters = squadIds.size ? Math.min(MAX, squadIds.size) : 0;
+  const overseasSelected = useMemo(() => {
+    let n = 0;
+    for (const p of players) {
+      if (p.isOverseas && xi.has(p.playerId)) n++;
+    }
+    return n;
+  }, [players, xi]);
 
   function toggle(pid: string) {
     setXi((prev) => {
@@ -52,6 +60,11 @@ export function PrivateLineupPanel({
       } else {
         if (next.size >= maxStarters) {
           toast.error(`At most ${maxStarters} starter${maxStarters === 1 ? "" : "s"}`);
+          return prev;
+        }
+        const pick = players.find((p) => p.playerId === pid);
+        if (pick?.isOverseas && overseasSelected >= MAX_OVERSEAS_XI_IPL) {
+          toast.error(`At most ${MAX_OVERSEAS_XI_IPL} overseas players allowed in Playing XI`);
           return prev;
         }
         next.add(pid);
@@ -101,8 +114,20 @@ export function PrivateLineupPanel({
           <p className="text-sm font-semibold text-white">Your Playing XI</p>
           <p className="mt-1 text-xs text-neutral-400">Choose up to {maxStarters || MAX}. Captain 2× · Vice-captain 1.5×.</p>
         </div>
-        <div className="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-200 ring-1 ring-blue-500/20">
-          {xi.size}/{maxStarters || MAX} selected
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-200 ring-1 ring-blue-500/20">
+            {xi.size}/{maxStarters || MAX} selected
+          </div>
+          <div
+            className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
+              overseasSelected > MAX_OVERSEAS_XI_IPL
+                ? "bg-red-500/10 text-red-200 ring-red-500/25"
+                : "bg-neutral-900/30 text-neutral-300 ring-white/10"
+            }`}
+            title={`Overseas in XI: ${overseasSelected}/${MAX_OVERSEAS_XI_IPL}`}
+          >
+            ✈️ {overseasSelected}/{MAX_OVERSEAS_XI_IPL}
+          </div>
         </div>
       </div>
 

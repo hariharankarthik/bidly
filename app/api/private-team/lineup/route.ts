@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 const MAX_XI = 11;
+const MAX_OVERSEAS_XI_IPL = 4;
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
 
   const { data: league } = await supabase
     .from("fantasy_leagues")
-    .select("id, host_id, league_kind")
+    .select("id, host_id, league_kind, sport_id")
     .eq("id", team.league_id)
     .maybeSingle();
   if (!league || league.league_kind !== "private") {
@@ -50,6 +51,21 @@ export async function POST(req: NextRequest) {
   for (const pid of xi) {
     if (!squad.has(pid)) {
       return NextResponse.json({ error: "Starting XI must be players on your squad" }, { status: 400 });
+    }
+  }
+
+  if (league.sport_id === "ipl_2026" && xi.length > 0) {
+    const { data: xiPlayers, error: xErr } = await supabase
+      .from("players")
+      .select("id, is_overseas")
+      .in("id", xi);
+    if (xErr) return NextResponse.json({ error: xErr.message }, { status: 500 });
+    const overseas = (xiPlayers ?? []).filter((p) => p.is_overseas).length;
+    if (overseas > MAX_OVERSEAS_XI_IPL) {
+      return NextResponse.json(
+        { error: `Starting XI can include at most ${MAX_OVERSEAS_XI_IPL} overseas players` },
+        { status: 400 },
+      );
     }
   }
 
