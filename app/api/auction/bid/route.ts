@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { validateBid } from "@/lib/auction-engine";
 import { getSportConfig } from "@/lib/sports";
+import { BidSchema } from "@/lib/schemas";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -10,10 +11,11 @@ export async function POST(req: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { room_id, team_id, bid_amount } = await req.json();
-  if (!room_id || !team_id || typeof bid_amount !== "number") {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  const parsed = BidSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid payload", details: parsed.error.flatten() }, { status: 400 });
   }
+  const { room_id, team_id, bid_amount } = parsed.data;
 
   const [{ data: room, error: rErr }, { data: team, error: tErr }] = await Promise.all([
     supabase.from("auction_rooms").select("*").eq("id", room_id).single(),

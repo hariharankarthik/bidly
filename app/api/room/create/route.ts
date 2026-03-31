@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getSportConfig } from "@/lib/sports";
 import { generateInviteCode } from "@/lib/utils";
+import { CreateRoomSchema } from "@/lib/schemas";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -10,26 +11,11 @@ export async function POST(req: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await req.json();
-  const {
-    name,
-    sport_id,
-    purse,
-    timer_seconds,
-    max_teams,
-    bid_increments,
-  }: {
-    name?: string;
-    sport_id?: string;
-    purse?: number;
-    timer_seconds?: number;
-    max_teams?: number;
-    bid_increments?: number[];
-  } = body;
-
-  if (!name?.trim() || !sport_id) {
-    return NextResponse.json({ error: "Missing name or sport_id" }, { status: 400 });
+  const parsed = CreateRoomSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid payload", details: parsed.error.flatten() }, { status: 400 });
   }
+  const { name, sport_id, purse, timer_seconds, max_teams, bid_increments } = parsed.data;
 
   const config = getSportConfig(sport_id);
   if (!config) return NextResponse.json({ error: "Unknown sport" }, { status: 400 });
