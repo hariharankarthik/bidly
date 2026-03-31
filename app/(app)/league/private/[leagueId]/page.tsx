@@ -62,7 +62,7 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
         actions={
           <>
             {isHost ? (
-              <Button asChild variant="secondary" className="border-violet-500/30 text-violet-200">
+              <Button asChild variant="secondary" className="border-violet-500/30 text-white">
                 <Link href={`/league/private/${leagueId}/import`}>Import rosters</Link>
               </Button>
             ) : null}
