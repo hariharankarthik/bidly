@@ -247,7 +247,7 @@ export function AuctionRoomView({
             <h1 className="mt-1 text-xl font-bold text-white sm:text-2xl">{room.name}</h1>
           </div>
           {room.status === "paused" ? (
-            <Badge variant="outline" className="border-amber-500/50 bg-amber-950/40 px-3 py-1 text-xs text-amber-200">
+            <Badge variant="subtle" className="bg-amber-950/40 px-3 py-1 text-xs text-amber-200 ring-1 ring-amber-500/40">
               PAUSED
             </Badge>
           ) : (
