@@ -54,7 +54,13 @@ export function ImportTeamsClient({ leagueId }: { leagueId: string }) {
         }),
       });
       const data = (await res.json()) as Preview & { error?: string };
-      if (!res.ok) throw new Error(data.error || "Preview failed");
+      if (!res.ok) {
+        const warnings = (data as unknown as { warnings?: string[] }).warnings ?? [];
+        if (warnings.length) {
+          toast.message(`Warnings: ${warnings.slice(0, 3).join(" · ")}${warnings.length > 3 ? "…" : ""}`);
+        }
+        throw new Error(data.error || "Preview failed");
+      }
       setPreview({
         team_count: data.team_count,
         player_slots: data.player_slots,
@@ -89,8 +95,14 @@ export function ImportTeamsClient({ leagueId }: { leagueId: string }) {
           },
         }),
       });
-      const data = (await res.json()) as { error?: string; teams_imported?: number };
-      if (!res.ok) throw new Error(data.error || "Import failed");
+      const data = (await res.json()) as { error?: string; teams_imported?: number; warnings?: string[] };
+      if (!res.ok) {
+        const warnings = data.warnings ?? [];
+        if (warnings.length) {
+          toast.message(`Warnings: ${warnings.slice(0, 3).join(" · ")}${warnings.length > 3 ? "…" : ""}`);
+        }
+        throw new Error(data.error || "Import failed");
+      }
       toast.success(`Imported ${data.teams_imported ?? 0} teams`);
       router.push(`/league/private/${leagueId}`);
       router.refresh();
