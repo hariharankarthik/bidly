@@ -154,7 +154,7 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
                           {claimedBy ? (
                             <>
                               {" "}
-                              · <span className="text-neutral-400">Claimed by</span>{" "}
+                              · <span className="text-neutral-400">Owner</span>{" "}
                               <span className="font-medium text-neutral-200">
                                 {ownerNameByUserId.get(claimedBy) ?? "Member"}
                               </span>
