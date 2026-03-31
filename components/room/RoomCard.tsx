@@ -14,7 +14,7 @@ export function RoomCard({
   role: "host" | "member";
 }) {
   const status = room.status;
-  const badgeVariant = status === "live" ? "live" : status === "completed" ? "secondary" : "outline";
+  const badgeVariant = status === "live" ? "live" : status === "completed" ? "secondary" : "subtle";
 
   const href =
     status === "lobby" || status === "paused"
