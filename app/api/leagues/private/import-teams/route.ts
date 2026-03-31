@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import {
   buildPrivateTeamsFromRows,
   sheetTextToNormalizedRows,
@@ -62,6 +63,17 @@ export async function POST(req: NextRequest) {
     .filter(Boolean);
 
   if (missingNames.length) {
+    const admin = createServiceRoleClient();
+    if (!admin) {
+      return NextResponse.json(
+        {
+          error:
+            "Some player names are missing from the player pool, and the server is not configured to auto-create them. Set SUPABASE_SERVICE_ROLE_KEY on the server, or seed players for this sport first.",
+          unmatched_names: missingNames,
+        },
+        { status: 500 },
+      );
+    }
     const unique = [...new Set(missingNames)];
     // Insert only names that don't already exist (case-insensitive).
     const existingLower = new Set((players ?? []).map((p) => p.name.trim().toLowerCase()));
@@ -79,7 +91,7 @@ export async function POST(req: NextRequest) {
         stats: {},
         image_url: null as string | null,
       }));
-      const { error: insPlayersErr } = await supabase.from("players").insert(insertRows);
+      const { error: insPlayersErr } = await admin.from("players").insert(insertRows);
       if (insPlayersErr) return NextResponse.json({ error: insPlayersErr.message }, { status: 500 });
     }
   }
