@@ -68,7 +68,7 @@ export function BidControls({
           ))}
         </select>
       </div>
-      <Button className="h-12 w-full text-base font-semibold shadow-lg shadow-emerald-950/30" disabled={disabled || loading || !teamId} onClick={placeBid}>
+      <Button className="h-12 w-full text-base font-semibold shadow-lg shadow-blue-950/30" disabled={disabled || loading || !teamId} onClick={placeBid}>
         Bid {formatCurrencyLakhsToCr(amount)}
       </Button>
     </div>

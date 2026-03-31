@@ -262,14 +262,14 @@ export function AuctionRoomView({
           </p>
         ) : null}
         <PlayerCard player={player} />
-        <div className="rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-emerald-950/40 to-neutral-950/90 p-5 ring-1 ring-emerald-500/10">
+        <div className="rounded-2xl border border-blue-500/25 bg-gradient-to-br from-blue-950/40 to-neutral-950/90 p-5 ring-1 ring-blue-500/10">
           <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Current bid</p>
           <motion.p
             key={room.current_bid}
             initial={reduceMotion ? undefined : { scale: 1.04, opacity: 0.85 }}
             animate={reduceMotion ? undefined : { scale: 1, opacity: 1 }}
             transition={reduceMotion ? undefined : { type: "spring", stiffness: 380, damping: 22 }}
-            className="mt-1 text-3xl font-bold tabular-nums text-emerald-300 sm:text-4xl"
+            className="mt-1 text-3xl font-bold tabular-nums text-blue-200 sm:text-4xl"
           >
             {formatCurrencyLakhsToCr(room.current_bid)}
           </motion.p>
