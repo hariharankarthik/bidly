@@ -123,10 +123,15 @@ body > * {
 }
 
 .aa-card-interactive {
+  cursor: pointer;
   transition:
     border-color 0.2s ease,
     box-shadow 0.25s ease,
     transform 0.2s ease;
+}
+.aa-card-interactive:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.55);
+  outline-offset: 2px;
 }
 .aa-card-interactive:hover {
   border-color: rgba(255, 255, 255, 0.18);
@@ -136,9 +141,15 @@ body > * {
     0 16px 40px -20px rgba(0, 0, 0, 0.5);
   transform: translateY(-1px);
 }
+.aa-card-interactive:active {
+  transform: translateY(0px) scale(0.99);
+}
 
 @media (prefers-reduced-motion: reduce) {
   .aa-card-interactive:hover {
+    transform: none;
+  }
+  .aa-card-interactive:active {
     transform: none;
   }
 }

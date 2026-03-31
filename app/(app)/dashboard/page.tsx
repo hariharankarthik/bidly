@@ -5,6 +5,7 @@ import { JoinModal } from "@/components/room/JoinModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ClickableCardLink } from "@/components/ui/clickable-card-link";
 import type { AuctionRoom } from "@/lib/sports/types";
 import { IPL_2026 } from "@/lib/sports/ipl";
 import { NFL_2026 } from "@/lib/sports/nfl";
@@ -118,10 +119,10 @@ export default async function DashboardPage({
           </div>
           <div className="grid gap-3">
             {privateHosted.map((pl) => (
-              <Link
+              <ClickableCardLink
                 key={pl.id}
                 href={`/league/private/${pl.id}`}
-                className="aa-card-interactive group flex items-center justify-between rounded-xl border border-violet-500/20 bg-neutral-950/50 px-4 py-3"
+                className="flex items-center justify-between rounded-xl border border-violet-500/20 bg-neutral-950/50 px-4 py-3"
               >
                 <div>
                   <p className="font-medium text-neutral-100 group-hover:text-white">{pl.name}</p>
@@ -131,7 +132,7 @@ export default async function DashboardPage({
                   </p>
                 </div>
                 <span className="text-xs text-violet-300/80 group-hover:text-violet-200">Open →</span>
-              </Link>
+              </ClickableCardLink>
             ))}
           </div>
         </section>

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/card";
 
 export function GlassCard({
   children,
@@ -11,16 +12,15 @@ export function GlassCard({
   hover?: boolean;
 }) {
   return (
-    <div
+    <Card
       className={cn(
-        "rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl",
-        "shadow-lg shadow-black/20",
-        hover && "transition-all duration-300 hover:bg-white/8 hover:border-white/20 hover:shadow-xl",
+        // Card already provides the base glass surface; keep this as a thin wrapper for backwards compatibility.
+        hover && "aa-card-interactive hover:bg-white/8 hover:border-white/20 hover:shadow-xl",
         className,
       )}
     >
       {children}
-    </div>
+    </Card>
   );
 }
 

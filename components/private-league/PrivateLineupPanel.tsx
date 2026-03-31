@@ -123,7 +123,7 @@ export function PrivateLineupPanel({
                   type="checkbox"
                   checked={on}
                   onChange={() => toggle(p.playerId)}
-                  className="h-4 w-4 rounded border-neutral-600 text-blue-500"
+                  className="h-4 w-4 cursor-pointer rounded border-neutral-600 text-blue-500"
                 />
                 <span className="inline-flex flex-wrap items-center gap-2">
                   <PlayerMeta variant="inline" role={p.role} nationality={p.nationality ?? null} isOverseas={p.isOverseas} />
@@ -135,7 +135,7 @@ export function PrivateLineupPanel({
                   <button
                     type="button"
                     onClick={() => setCaptain(p.playerId)}
-                    className={`rounded-full px-2 py-1 font-semibold ring-1 transition-colors ${
+                    className={`cursor-pointer rounded-full px-2 py-1 font-semibold ring-1 transition-colors ${
                       isC ? "bg-blue-500/15 text-blue-200 ring-blue-500/30" : "bg-neutral-900/40 text-neutral-400 ring-neutral-700/80 hover:text-neutral-200"
                     }`}
                   >
@@ -144,7 +144,7 @@ export function PrivateLineupPanel({
                   <button
                     type="button"
                     onClick={() => setViceCaptain(p.playerId)}
-                    className={`rounded-full px-2 py-1 font-semibold ring-1 transition-colors ${
+                    className={`cursor-pointer rounded-full px-2 py-1 font-semibold ring-1 transition-colors ${
                       isVC ? "bg-sky-500/15 text-sky-200 ring-sky-500/30" : "bg-neutral-900/40 text-neutral-400 ring-neutral-700/80 hover:text-neutral-200"
                     }`}
                   >
