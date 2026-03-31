@@ -42,7 +42,7 @@ export function RoomCard({
           </span>
           <span className="text-neutral-600">·</span>
           <span className={role === "host" ? "font-medium text-amber-200/90" : ""}>
-            {role === "host" ? "You host" : "Playing"}
+            {role === "host" ? "Host" : "Participant"}
           </span>
           <span className="text-neutral-600">·</span>
           <span className="font-mono text-xs tracking-wider text-blue-300/90">{room.invite_code}</span>
