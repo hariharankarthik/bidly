@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { RoomCard } from "@/components/room/RoomCard";
-import { JoinModal } from "@/components/room/JoinModal";
+import { JoinInline } from "@/components/room/JoinModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -180,7 +180,7 @@ export default async function DashboardPage({
               <Button asChild>
                 <Link href="/room/create">Create your first room</Link>
               </Button>
-              <JoinModal />
+              <JoinInline />
             </div>
           </div>
         ) : (
