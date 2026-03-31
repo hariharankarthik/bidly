@@ -5,6 +5,12 @@ export interface SportConfig {
   currency: { symbol: string; unit: string; multiplier: number };
   purse: { default: number; min: number; max: number };
   timer: { default: number; min: number; max: number };
+  lineup?: {
+    /** Fantasy starting lineup size (e.g. 11 for IPL). */
+    xiSize: number;
+    /** Max overseas/foreign players allowed in the starting lineup (if applicable). */
+    maxOverseasInXi?: number;
+  };
   roster: {
     maxTeams: number;
     maxPlayers: number;

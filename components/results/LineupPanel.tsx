@@ -6,14 +6,13 @@ import { Button } from "@/components/ui/button";
 import type { ResultPlayer } from "./ResultsBody";
 import { PlayerMeta } from "@/components/player/PlayerMeta";
 
-const MAX = 11;
-const MAX_OVERSEAS_XI_IPL = 4;
-
 export function LineupPanel({
   teamId,
   ownerId,
   myUserId,
   players,
+  xiSize,
+  maxOverseasInXi,
   initialXi,
   captainPlayerId,
   viceCaptainPlayerId,
@@ -22,6 +21,8 @@ export function LineupPanel({
   ownerId: string;
   myUserId: string;
   players: ResultPlayer[];
+  xiSize: number;
+  maxOverseasInXi: number | null;
   initialXi: string[];
   captainPlayerId: string | null;
   viceCaptainPlayerId: string | null;
@@ -49,8 +50,7 @@ export function LineupPanel({
 
   const squadIds = useMemo(() => new Set(players.map((p) => p.playerId)), [players]);
   const nameById = useMemo(() => new Map(players.map((p) => [p.playerId, p.name])), [players]);
-  const maxStarters = squadIds.size ? Math.min(MAX, squadIds.size) : 0;
-  const canSetFullXi = squadIds.size >= MAX;
+  const canSetFullXi = squadIds.size >= xiSize;
   const overseasSelected = useMemo(() => {
     let n = 0;
     for (const p of players) {
@@ -82,16 +82,16 @@ export function LineupPanel({
         if (vc === pid) setVc(null);
       } else {
         if (!canSetFullXi) {
-          toast.error(`You need ${MAX} players on your squad to set a Starting XI`);
+          toast.error(`You need ${xiSize} players on your squad to set a Starting XI`);
           return prev;
         }
-        if (next.size >= MAX) {
-          toast.error(`Starting XI must have exactly ${MAX} players`);
+        if (next.size >= xiSize) {
+          toast.error(`Starting XI must have exactly ${xiSize} players`);
           return prev;
         }
         const pick = players.find((p) => p.playerId === pid);
-        if (pick?.isOverseas && overseasSelected >= MAX_OVERSEAS_XI_IPL) {
-          toast.error(`At most ${MAX_OVERSEAS_XI_IPL} overseas players allowed in Starting XI`);
+        if (maxOverseasInXi != null && pick?.isOverseas && overseasSelected >= maxOverseasInXi) {
+          toast.error(`At most ${maxOverseasInXi} overseas players allowed in Starting XI`);
           return prev;
         }
         next.add(pid);
@@ -105,8 +105,8 @@ export function LineupPanel({
     try {
       const xiArr = [...xi];
       if (xiArr.length > 0) {
-        if (!canSetFullXi) throw new Error(`You need ${MAX} players on your squad to set a Starting XI`);
-        if (xiArr.length !== MAX) throw new Error(`Starting XI must have exactly ${MAX} players`);
+        if (!canSetFullXi) throw new Error(`You need ${xiSize} players on your squad to set a Starting XI`);
+        if (xiArr.length !== xiSize) throw new Error(`Starting XI must have exactly ${xiSize} players`);
       }
       const res = await fetch("/api/team/lineup", {
         method: "POST",
@@ -136,29 +136,31 @@ export function LineupPanel({
         <div>
           <p className="text-sm font-semibold text-white">Starting XI</p>
           <p className="mt-1 text-xs text-neutral-400">
-            You can set a Starting XI only once you have {MAX} players. Starters count for points; bench scores 0.
+            You can set a Starting XI only once you have {xiSize} players. Starters count for points; bench scores 0.
             Captain 2× · Vice-captain 1.5×.
           </p>
           {!canSetFullXi ? (
             <p className="mt-1 text-xs text-amber-200/90">
-              Your squad has {squadIds.size}. Buy {MAX - squadIds.size} more to unlock XI selection.
+              Your squad has {squadIds.size}. Buy {xiSize - squadIds.size} more to unlock XI selection.
             </p>
           ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-200 ring-1 ring-blue-500/20">
-            {displayedStarterCount}/{MAX} selected
+            {displayedStarterCount}/{xiSize} selected
           </div>
-          <div
-            className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
-              overseasSelected > MAX_OVERSEAS_XI_IPL
-                ? "bg-red-500/10 text-red-200 ring-red-500/25"
-                : "bg-neutral-900/30 text-neutral-300 ring-white/10"
-            }`}
-            title={`Overseas in XI: ${overseasSelected}/${MAX_OVERSEAS_XI_IPL}`}
-          >
-            ✈️ {overseasSelected}/{MAX_OVERSEAS_XI_IPL}
-          </div>
+          {maxOverseasInXi != null ? (
+            <div
+              className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
+                overseasSelected > maxOverseasInXi
+                  ? "bg-red-500/10 text-red-200 ring-red-500/25"
+                  : "bg-neutral-900/30 text-neutral-300 ring-white/10"
+              }`}
+              title={`Overseas in XI: ${overseasSelected}/${maxOverseasInXi}`}
+            >
+              ✈️ {overseasSelected}/{maxOverseasInXi}
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -243,7 +245,7 @@ export function LineupPanel({
         <span className="text-xs text-neutral-500">
           Starting XI:{" "}
           <span className="font-medium text-neutral-300">
-            {displayedStarterCount}/{MAX}
+            {displayedStarterCount}/{xiSize}
           </span>
           {squadIds.size > 0 ? (
             <span className="text-neutral-600"> · Auction squad {squadIds.size}</span>

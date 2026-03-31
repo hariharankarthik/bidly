@@ -7,6 +7,7 @@ export const IPL_2026: SportConfig = {
   currency: { symbol: "₹", unit: "Cr", multiplier: 100 },
   purse: { default: 12000, min: 5000, max: 15000 },
   timer: { default: 20, min: 10, max: 60 },
+  lineup: { xiSize: 11, maxOverseasInXi: 4 },
   roster: {
     maxTeams: 10,
     maxPlayers: 25,

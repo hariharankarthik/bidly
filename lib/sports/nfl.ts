@@ -8,6 +8,7 @@ export const NFL_2026: SportConfig = {
   currency: { symbol: "$", unit: "M", multiplier: 1 },
   purse: { default: 200, min: 100, max: 300 },
   timer: { default: 45, min: 15, max: 90 },
+  lineup: { xiSize: 11 },
   roster: {
     maxTeams: 12,
     maxPlayers: 15,

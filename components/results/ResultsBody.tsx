@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { LineupPanel } from "./LineupPanel";
 import { formatCurrencyLakhsToCr } from "@/lib/utils";
 import { PlayerMeta } from "@/components/player/PlayerMeta";
+import { getSportConfig } from "@/lib/sports";
 
 export type ResultPlayer = {
   resultId: string;
@@ -41,14 +42,19 @@ export function ResultsBody({
   roomName,
   teams,
   myUserId,
+  sportId,
 }: {
   roomId: string;
   roomName: string;
   teams: ResultTeamBlock[];
   myUserId: string;
+  sportId: string;
 }) {
   const shareRef = useRef<HTMLDivElement>(null);
   const [sharing, setSharing] = useState(false);
+  const cfg = getSportConfig(sportId);
+  const xiSize = cfg?.lineup?.xiSize ?? 11;
+  const maxOverseasInXi = cfg?.lineup?.maxOverseasInXi ?? null;
 
   const shareImage = useCallback(async () => {
     const node = shareRef.current;
@@ -191,6 +197,8 @@ export function ResultsBody({
               ownerId={team.ownerId}
               myUserId={myUserId}
               players={team.players}
+              xiSize={xiSize}
+              maxOverseasInXi={maxOverseasInXi}
               initialXi={team.startingXiPlayerIds}
               captainPlayerId={team.captainPlayerId}
               viceCaptainPlayerId={team.viceCaptainPlayerId}

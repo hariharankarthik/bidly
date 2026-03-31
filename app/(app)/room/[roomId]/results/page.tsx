@@ -74,6 +74,6 @@ export default async function ResultsPage({ params }: { params: Promise<{ roomId
   });
 
   return (
-    <ResultsBody roomId={roomId} roomName={room.name} teams={blocks} myUserId={user?.id ?? ""} />
+    <ResultsBody roomId={roomId} roomName={room.name} teams={blocks} myUserId={user?.id ?? ""} sportId={room.sport_id} />
   );
 }

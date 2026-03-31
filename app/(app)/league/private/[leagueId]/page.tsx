@@ -5,6 +5,7 @@ import { LeagueClient } from "@/components/league/LeagueClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
+import { getSportConfig } from "@/lib/sports";
 import type { LeagueTeamDisplay } from "@/lib/sports/types";
 import { PlayerMeta } from "@/components/player/PlayerMeta";
 import { ClaimTeamButton } from "@/components/private-league/ClaimTeamButton";
@@ -19,11 +20,15 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
 
   const { data: league, error } = await supabase
     .from("fantasy_leagues")
-    .select("id, name, host_id, league_kind, invite_code")
+    .select("id, name, host_id, league_kind, invite_code, sport_id")
     .eq("id", leagueId)
     .single();
 
   if (error || !league || league.league_kind !== "private") notFound();
+
+  const cfg = getSportConfig(league.sport_id);
+  const xiSize = cfg?.lineup?.xiSize ?? 11;
+  const maxOverseasInXi = cfg?.lineup?.maxOverseasInXi ?? null;
 
   const { data: privateTeams } = await supabase
     .from("private_league_teams")
@@ -182,6 +187,8 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
                             isOverseas: p.is_overseas,
                           }) satisfies PrivateTeamPlayer,
                       )}
+                      xiSize={xiSize}
+                      maxOverseasInXi={maxOverseasInXi}
                       initialXi={Array.isArray(t.starting_xi_player_ids) ? (t.starting_xi_player_ids as string[]) : []}
                       captainPlayerId={t.captain_player_id as string | null}
                       viceCaptainPlayerId={t.vice_captain_player_id as string | null}

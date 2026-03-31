@@ -5,9 +5,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PlayerMeta } from "@/components/player/PlayerMeta";
 
-const MAX = 11;
-const MAX_OVERSEAS_XI_IPL = 4;
-
 export type PrivateTeamPlayer = {
   playerId: string;
   name: string;
@@ -19,12 +16,16 @@ export type PrivateTeamPlayer = {
 export function PrivateLineupPanel({
   privateTeamId,
   players,
+  xiSize,
+  maxOverseasInXi,
   initialXi,
   captainPlayerId,
   viceCaptainPlayerId,
 }: {
   privateTeamId: string;
   players: PrivateTeamPlayer[];
+  xiSize: number;
+  maxOverseasInXi: number | null;
   initialXi: string[];
   captainPlayerId: string | null;
   viceCaptainPlayerId: string | null;
@@ -41,8 +42,8 @@ export function PrivateLineupPanel({
   }, [privateTeamId, captainPlayerId, viceCaptainPlayerId, initialXi]);
 
   const squadIds = useMemo(() => new Set(players.map((p) => p.playerId)), [players]);
-  const maxStarters = squadIds.size ? Math.min(MAX, squadIds.size) : 0;
-  const canSetFullXi = squadIds.size >= MAX;
+  const maxStarters = squadIds.size ? Math.min(xiSize, squadIds.size) : 0;
+  const canSetFullXi = squadIds.size >= xiSize;
   const overseasSelected = useMemo(() => {
     let n = 0;
     for (const p of players) {
@@ -60,17 +61,17 @@ export function PrivateLineupPanel({
         if (vc === pid) setVc(null);
       } else {
         if (next.size >= maxStarters) {
-          toast.error(`You need ${MAX} players on your squad to set a Playing XI`);
+          toast.error(`You need ${xiSize} players on your squad to set a Playing XI`);
           return prev;
         }
         if (!canSetFullXi) return prev;
-        if (next.size >= MAX) {
-          toast.error(`Playing XI must have exactly ${MAX} players`);
+        if (next.size >= xiSize) {
+          toast.error(`Playing XI must have exactly ${xiSize} players`);
           return prev;
         }
         const pick = players.find((p) => p.playerId === pid);
-        if (pick?.isOverseas && overseasSelected >= MAX_OVERSEAS_XI_IPL) {
-          toast.error(`At most ${MAX_OVERSEAS_XI_IPL} overseas players allowed in Playing XI`);
+        if (maxOverseasInXi != null && pick?.isOverseas && overseasSelected >= maxOverseasInXi) {
+          toast.error(`At most ${maxOverseasInXi} overseas players allowed in Playing XI`);
           return prev;
         }
         next.add(pid);
@@ -94,8 +95,8 @@ export function PrivateLineupPanel({
     try {
       const xiArr = [...xi];
       if (xiArr.length > 0) {
-        if (!canSetFullXi) throw new Error(`You need ${MAX} players on your squad to set a Playing XI`);
-        if (xiArr.length !== MAX) throw new Error(`Playing XI must have exactly ${MAX} players`);
+        if (!canSetFullXi) throw new Error(`You need ${xiSize} players on your squad to set a Playing XI`);
+        if (xiArr.length !== xiSize) throw new Error(`Playing XI must have exactly ${xiSize} players`);
       }
       const res = await fetch("/api/private-team/lineup", {
         method: "POST",
@@ -123,28 +124,30 @@ export function PrivateLineupPanel({
         <div>
           <p className="text-sm font-semibold text-white">Your Playing XI</p>
           <p className="mt-1 text-xs text-neutral-400">
-            You can set a Playing XI only once you have {MAX} players. Captain 2× · Vice-captain 1.5×.
+            You can set a Playing XI only once you have {xiSize} players. Captain 2× · Vice-captain 1.5×.
           </p>
           {!canSetFullXi ? (
             <p className="mt-1 text-xs text-amber-200/90">
-              Your squad has {squadIds.size}. Add {MAX - squadIds.size} more to unlock XI selection.
+              Your squad has {squadIds.size}. Add {xiSize - squadIds.size} more to unlock XI selection.
             </p>
           ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-200 ring-1 ring-blue-500/20">
-            {xi.size}/{MAX} selected
+            {xi.size}/{xiSize} selected
           </div>
-          <div
-            className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
-              overseasSelected > MAX_OVERSEAS_XI_IPL
-                ? "bg-red-500/10 text-red-200 ring-red-500/25"
-                : "bg-neutral-900/30 text-neutral-300 ring-white/10"
-            }`}
-            title={`Overseas in XI: ${overseasSelected}/${MAX_OVERSEAS_XI_IPL}`}
-          >
-            ✈️ {overseasSelected}/{MAX_OVERSEAS_XI_IPL}
-          </div>
+          {maxOverseasInXi != null ? (
+            <div
+              className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
+                overseasSelected > maxOverseasInXi
+                  ? "bg-red-500/10 text-red-200 ring-red-500/25"
+                  : "bg-neutral-900/30 text-neutral-300 ring-white/10"
+              }`}
+              title={`Overseas in XI: ${overseasSelected}/${maxOverseasInXi}`}
+            >
+              ✈️ {overseasSelected}/{maxOverseasInXi}
+            </div>
+          ) : null}
         </div>
       </div>
 
