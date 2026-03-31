@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
+import { EmojiBadge } from "@/components/ui/emoji-badge";
 import { cn } from "@/lib/utils";
 
 export type PlayerMetaInput = {
@@ -50,6 +50,21 @@ function emojiForRole(role: string | null | undefined): string | null {
   }
 }
 
+function roleLabel(role: string | null | undefined): string | null {
+  switch ((role ?? "").trim().toUpperCase()) {
+    case "BAT":
+      return "Batter";
+    case "BOWL":
+      return "Bowler";
+    case "ALL":
+      return "All-rounder";
+    case "WK":
+      return "Wicketkeeper";
+    default:
+      return null;
+  }
+}
+
 export function PlayerMeta({
   role,
   nationality,
@@ -61,24 +76,28 @@ export function PlayerMeta({
   className?: string;
 }) {
   const flag = flagForNationality(nationality);
+  const flagLabel = (nationality ?? "").trim() || "Unknown country";
   const roleEmoji = emojiForRole(role);
-  const airplane = isOverseas ? "✈️" : null;
+  const rLabel = roleLabel(role);
+  const showPlane = Boolean(isOverseas);
 
-  const parts = [flag, roleEmoji, airplane].filter(Boolean).join(" ");
-  if (!parts) return null;
+  const hasAny = Boolean(flag || roleEmoji || showPlane);
+  if (!hasAny) return null;
 
-  if (variant === "inline") {
-    return (
-      <span className={cn("text-sm text-neutral-400", className)} aria-hidden>
-        {parts}
-      </span>
-    );
-  }
+  const wrapClass =
+    variant === "inline"
+      ? cn("inline-flex items-center gap-1.5 text-sm text-neutral-400", className)
+      : cn(
+          "inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-neutral-200",
+          className,
+        );
 
   return (
-    <Badge variant="outline" className={cn("shrink-0 border-white/10 text-neutral-300", className)}>
-      {parts}
-    </Badge>
+    <span className={wrapClass}>
+      {flag ? <EmojiBadge emoji={flag} label={flagLabel} /> : null}
+      {roleEmoji && rLabel ? <EmojiBadge emoji={roleEmoji} label={rLabel} /> : null}
+      {showPlane ? <EmojiBadge emoji="✈️" label="Overseas" /> : null}
+    </span>
   );
 }
 

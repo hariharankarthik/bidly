@@ -24,6 +24,19 @@ export function PlayerCard({ player, baseLabel = "Base" }: { player: PlayerRow |
             <PlayerMeta variant="inline" role={player.role} nationality={player.nationality} isOverseas={player.is_overseas} />
             <span>{player.name}</span>
           </h2>
+          <p className="mt-2 text-sm text-neutral-400">
+            {player.nationality ? player.nationality : "Unknown country"} ·{" "}
+            {player.role === "BAT"
+              ? "Batter"
+              : player.role === "BOWL"
+                ? "Bowler"
+                : player.role === "ALL"
+                  ? "All-rounder"
+                  : player.role === "WK"
+                    ? "Wicketkeeper"
+                    : player.role}
+            {player.is_overseas ? " · Overseas" : ""}
+          </p>
         </div>
         {player.tier ? (
           <Badge variant="secondary" className="shrink-0 border-amber-500/20 bg-amber-950/40 text-amber-200/90">
