@@ -2,10 +2,12 @@ import { createClient } from "@/lib/supabase/server";
 import { loginUrlWithNext } from "@/lib/safe-path";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { redirect } from "next/navigation";
 
 export default async function JoinPage({ params }: { params: Promise<{ code: string }> }) {
   const { code: raw } = await params;
-  const code = (raw ?? "").trim().toUpperCase();
+  const codeRaw = (raw ?? "").trim();
+  const code = codeRaw.toUpperCase();
 
   const supabase = await createClient();
   const {
@@ -26,22 +28,24 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
   }
 
   // Auction room invite?
-  const { data: room } = await supabase.from("auction_rooms").select("id").eq("invite_code", code).maybeSingle();
+  const { data: room } = await supabase
+    .from("auction_rooms")
+    .select("id")
+    .in("invite_code", [code, codeRaw])
+    .maybeSingle();
   if (room?.id) {
-    return (
-      <meta httpEquiv="refresh" content={`0; url=/room/${room.id}/lobby`} />
-    );
+    redirect(`/room/${room.id}/lobby`);
   }
 
   // Private league invite?
   const { data: league } = await supabase
     .from("fantasy_leagues")
     .select("id, league_kind")
-    .eq("invite_code", code)
+    .in("invite_code", [code, codeRaw])
     .maybeSingle();
   if (league?.id) {
     const dest = league.league_kind === "private" ? `/league/private/${league.id}` : `/league/${league.id}`;
-    return <meta httpEquiv="refresh" content={`0; url=${dest}`} />;
+    redirect(dest);
   }
 
   return (

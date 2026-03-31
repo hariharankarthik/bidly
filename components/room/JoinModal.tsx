@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,32 +18,12 @@ export function JoinInline({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState(initialCode);
-  const [teamName, setTeamName] = useState("");
-  const [loading, setLoading] = useState(false);
+  const trimmed = code.trim().toUpperCase();
 
-  async function join() {
-    if (!code.trim() || !teamName.trim()) {
-      toast.error("Invite code and team name required");
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await fetch("/api/room/join", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ invite_code: code.trim(), team_name: teamName.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Join failed");
-      toast.success("Joined room");
-      setOpen(false);
-      router.push(`/room/${data.room_id}/lobby`);
-      router.refresh();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Join failed");
-    } finally {
-      setLoading(false);
-    }
+  function join() {
+    if (!trimmed) return;
+    setOpen(false);
+    router.push(`/join/${encodeURIComponent(trimmed)}`);
   }
 
   if (!open) {
@@ -53,7 +32,7 @@ export function JoinInline({
         <Button asChild>
           <Link href={createRoomHref}>Create your first room</Link>
         </Button>
-        <Button variant="outline" size="lg" className="h-11 px-6 font-semibold" onClick={() => setOpen(true)}>
+        <Button variant="secondary" size="lg" className="h-11 px-6 font-semibold" onClick={() => setOpen(true)}>
           Join with code
         </Button>
       </div>
@@ -76,13 +55,15 @@ export function JoinInline({
       <div className="space-y-3">
         <div className="space-y-2">
           <Label htmlFor="code">Invite code</Label>
-          <Input id="code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="ABC12X" />
+          <Input
+            id="code"
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder="ABC12X"
+            autoCapitalize="characters"
+          />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="tname">Team name</Label>
-          <Input id="tname" value={teamName} onChange={(e) => setTeamName(e.target.value)} placeholder="Super Kings FC" />
-        </div>
-        <Button className="w-full" disabled={loading} onClick={join}>
+        <Button className="w-full" disabled={!trimmed} onClick={join}>
           Join
         </Button>
       </div>
