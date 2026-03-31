@@ -176,10 +176,7 @@ export default async function DashboardPage({
             <p className="mt-2 text-sm text-neutral-500">
               Create one for your group or paste an invite code from your host.
             </p>
-            <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <Button asChild>
-                <Link href="/room/create">Create your first room</Link>
-              </Button>
+            <div className="mt-6">
               <JoinInline />
             </div>
           </div>
