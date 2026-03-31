@@ -17,6 +17,7 @@ export function LeagueClient({
   leagueId,
   isHost,
   teams,
+  ownersByTeamId,
   title,
   subtitle,
   importHref,
@@ -24,6 +25,7 @@ export function LeagueClient({
   leagueId: string | null;
   isHost: boolean;
   teams: LeagueTeamDisplay[];
+  ownersByTeamId?: Record<string, string>;
   /** Optional page heading (defaults to fantasy copy) */
   title?: string;
   subtitle?: string;
@@ -180,7 +182,7 @@ export function LeagueClient({
         </div>
       ) : null}
       {loading ? <p className="text-sm text-neutral-500">Loading scores…</p> : null}
-      <Leaderboard scores={scores} teams={teams} />
+      <Leaderboard scores={scores} teams={teams} ownersByTeamId={ownersByTeamId} />
       <PointsChart scores={scores} teams={teams} />
       <MatchBreakdown scores={scores} teams={teams} />
     </div>

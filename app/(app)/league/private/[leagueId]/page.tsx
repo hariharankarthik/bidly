@@ -35,6 +35,14 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
     .select("id, team_name, team_color, squad_player_ids, starting_xi_player_ids, captain_player_id, vice_captain_player_id, claimed_by")
     .eq("league_id", leagueId);
 
+  const claimedByIds = [...new Set((privateTeams ?? []).map((t) => (t.claimed_by as string | null)).filter(Boolean))] as string[];
+  const { data: profileRows } = claimedByIds.length
+    ? await supabase.from("profiles").select("id, display_name, username").in("id", claimedByIds)
+    : { data: [] as { id: string; display_name: string | null; username: string | null }[] };
+  const ownerNameByUserId = new Map(
+    (profileRows ?? []).map((p) => [p.id, (p.display_name ?? p.username ?? "Member").trim() || "Member"] as const),
+  );
+
   const teams: LeagueTeamDisplay[] = (privateTeams ?? []).map((t) => ({
     id: t.id,
     team_name: t.team_name,
@@ -43,6 +51,12 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
 
   const isHost = user?.id === league.host_id;
   const myClaimedTeamId = (privateTeams ?? []).find((t) => (t.claimed_by as string | null) === user?.id)?.id ?? null;
+  const ownersByTeamId = Object.fromEntries(
+    (privateTeams ?? [])
+      .map((t) => [t.id, (t.claimed_by as string | null) ? ownerNameByUserId.get(t.claimed_by as string) ?? null : null] as const)
+      .filter(([, v]) => Boolean(v)),
+  ) as Record<string, string>;
+  const claimedCount = (privateTeams ?? []).filter((t) => Boolean(t.claimed_by)).length;
 
   const playerIds = [...new Set((privateTeams ?? []).flatMap((t) => (t.squad_player_ids as string[]) ?? []))];
   const { data: playerRows } = playerIds.length
@@ -58,6 +72,13 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
           <>
             Private league · invite code <span className="aa-invite-code text-violet-300">{league.invite_code}</span>
           </>
+        }
+        meta={
+          teams.length ? (
+            <span>
+              <span className="text-neutral-400">{claimedCount}</span>/{teams.length} claimed
+            </span>
+          ) : null
         }
         actions={
           <>
@@ -130,6 +151,20 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
                         <p className="font-medium text-white">{t.team_name}</p>
                         <p className="text-xs text-neutral-500">
                           {squad.length} players · {overseas} overseas
+                          {claimedBy ? (
+                            <>
+                              {" "}
+                              · <span className="text-neutral-400">Claimed by</span>{" "}
+                              <span className="font-medium text-neutral-200">
+                                {ownerNameByUserId.get(claimedBy) ?? "Member"}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              {" "}
+                              · <span className="text-neutral-500">Unclaimed</span>
+                            </>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -200,7 +235,7 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
           </div>
         </section>
       ) : null}
-      <LeagueClient leagueId={league.id} isHost={isHost} teams={teams} />
+      <LeagueClient leagueId={league.id} isHost={isHost} teams={teams} ownersByTeamId={ownersByTeamId} />
     </div>
   );
 }
