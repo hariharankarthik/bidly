@@ -90,12 +90,21 @@ export function LeagueClient({
         <Link href="/scoring" className="text-blue-300 underline-offset-2 hover:underline">
           Scoring system
         </Link>
-        . Host can still run mock rows for demos; real matches use the fantasy engine via <code className="rounded bg-neutral-800 px-1">performances</code> in the API.
+        .
+        {isHost ? (
+          <span className="block pt-1 text-neutral-500">As host, you can sync or demo scores using the tools below.</span>
+        ) : null}
       </p>
       {scores.length === 0 && !loading ? (
         <div className="rounded-xl border border-neutral-800 bg-neutral-950/40 p-4 text-sm text-neutral-400">
-          No match scores yet. If Vercel Cron is configured, this page will populate after the next scheduled run. Otherwise the host can
-          fetch a CricAPI match id (or add a mock match row for demo).
+          {isHost ? (
+            <>
+              No match scores yet. If match sync is configured, scores can appear automatically; you can also use <strong className="text-neutral-300">Host tools</strong>{" "}
+              below to demo a match or sync when a fixture is available.
+            </>
+          ) : (
+            <>No match scores yet. Check back after your host syncs a match.</>
+          )}
         </div>
       ) : null}
       {isHost ? (

@@ -46,7 +46,7 @@ function Section({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="overflow-hidden rounded-2xl border border-neutral-800/90 bg-gradient-to-b from-neutral-900/80 to-neutral-950/95 shadow-[0_0_0_1px_rgba(16,185,129,0.06)]">
+    <div className="overflow-hidden rounded-2xl border border-neutral-800/90 bg-gradient-to-b from-neutral-900/80 to-neutral-950/95 shadow-[0_0_0_1px_rgba(59,130,246,0.08)]">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -82,20 +82,8 @@ export function ScoringRulesClient() {
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-300/90">Fantasy</p>
         <h1 className="text-3xl font-bold tracking-tight text-white">Scoring system</h1>
         <p className="text-sm text-neutral-400">
-          Points mirror the IPL-style rules you shared — milestones use <strong className="text-neutral-200">highest tier only</strong>. Live
-          matches flow: scorecard → map to players → POST <code className="rounded bg-neutral-800 px-1 text-xs">/api/scores/calculate</code> with{" "}
-          <code className="rounded bg-neutral-800 px-1 text-xs">performances</code>.
-        </p>
-      </div>
-
-      <div className="space-y-3 rounded-2xl border border-violet-500/20 bg-violet-950/20 p-4">
-        <h2 className="text-sm font-semibold text-violet-200">Product modes (roadmap)</h2>
-        <p className="text-xs text-neutral-400">
-          <strong className="text-neutral-300">Bidly today</strong> is digital bidding + Supabase realtime. Your doc describes{" "}
-          <strong className="text-neutral-300">verbal auction + host assign</strong>, <strong className="text-neutral-300">re-auction</strong>,{" "}
-          <strong className="text-neutral-300">snake draft</strong>, and <strong className="text-neutral-300">C / VC multipliers</strong> — those
-          are not all built yet; this page locks the <strong className="text-neutral-300">scoring math</strong> the API will use once CricAPI is
-          wired.
+          How fantasy points are calculated in Bidly. Milestones use <strong className="text-neutral-200">highest tier only</strong> (e.g. a
+          century awards the 100+ band, not 25/50/75 stacked).
         </p>
       </div>
 
@@ -163,11 +151,10 @@ export function ScoringRulesClient() {
           <Row label="Run out (thrower)" pts="+6" />
         </Section>
 
-        <Section title="Special rules (engine notes)">
+        <Section title="Special rules">
           <ul className="list-disc space-y-2 pl-4 text-sm text-neutral-400">
             <li>Run-out dismissals do not count as bowling wickets for the bowler.</li>
             <li>Overthrows count as batting runs; boundary bonuses do not apply to overthrow boundaries.</li>
-            <li>Substitute fielder catches: no fantasy points (needs a flag in the mapper when CricAPI exposes it).</li>
             <li>Captain 2× / Vice-captain 1.5× apply after base points for players in your starting XI (set on **Results** after the auction).</li>
           </ul>
         </Section>

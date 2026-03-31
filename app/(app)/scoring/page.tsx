@@ -6,7 +6,7 @@ import { ScoringRulesClient } from "@/components/scoring/ScoringRulesClient";
 
 export const metadata: Metadata = {
   title: "Scoring system · Bidly",
-  description: "IPL fantasy scoring rules and API integration notes.",
+  description: "How IPL-style fantasy points are calculated in Bidly.",
 };
 
 export default async function ScoringPage() {

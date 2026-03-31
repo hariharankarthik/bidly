@@ -4,7 +4,7 @@ import { safeNextPath } from "@/lib/safe-path";
 import type { SupabaseCookieToSet } from "@/lib/supabase/cookie-types";
 import { resolveSupabasePublishableKey } from "@/lib/supabase/env";
 
-const PROTECTED_PREFIXES = ["/dashboard", "/room", "/practice", "/profile", "/scoring"];
+const PROTECTED_PREFIXES = ["/dashboard", "/room", "/practice", "/profile", "/scoring", "/league"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -47,6 +47,11 @@ export async function updateSession(request: NextRequest) {
     const nextParam = request.nextUrl.searchParams.get("next");
     const next = safeNextPath(nextParam, "/dashboard");
     return NextResponse.redirect(new URL(next, request.url));
+  }
+
+  // Signed-in users shouldn’t land on marketing home; dashboard is app home.
+  if (path === "/" && user) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return response;
