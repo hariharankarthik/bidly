@@ -75,7 +75,7 @@ export type AuctionTeam = {
   vice_captain_player_id?: string | null;
 };
 
-/** Private sheet league team (Supabase `private_league_teams`). */
+/** Private league team (Supabase `private_league_teams`). */
 export type PrivateLeagueTeam = {
   id: string;
   league_id: string;

@@ -76,7 +76,7 @@ export default async function DashboardPage({
           <h1 className="aa-display mt-1 text-2xl font-bold tracking-tight text-white sm:text-3xl">{displayName}</h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-neutral-400 sm:text-base">
             Run a mega auction room, or spin up a{" "}
-            <span className="text-blue-200/95">import a league</span> — paste squads from a sheet and keep the same fantasy scoring.
+            <span className="text-blue-200/95">private league</span> — import squads from a sheet and keep the same fantasy scoring.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <Button
@@ -97,7 +97,7 @@ export default async function DashboardPage({
             >
               <Link href="/league/private/create">
                 <Wand2 className="h-4 w-4" aria-hidden />
-                Import a league
+                Create a private league
               </Link>
             </Button>
             <div className="flex h-11 items-center justify-center sm:justify-start" title="Join a room using an invite code from your host.">
@@ -105,7 +105,7 @@ export default async function DashboardPage({
             </div>
           </div>
           <p className="mt-3 text-xs text-neutral-500">
-            <span className="text-neutral-300">Import a league</span> is for squads drafted offline — paste a sheet and track fantasy scores here.
+            <span className="text-neutral-300">Private leagues</span> are for squads drafted offline — import a sheet and track fantasy scores here.
           </p>
         </div>
       </div>
@@ -114,7 +114,7 @@ export default async function DashboardPage({
         <section className="space-y-4">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-violet-400" aria-hidden />
-            <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">Your sheet leagues</h2>
+            <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">Your private leagues</h2>
           </div>
           <div className="grid gap-3">
             {privateHosted.map((pl) => (

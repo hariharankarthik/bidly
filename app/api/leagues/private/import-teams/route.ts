@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   if (lErr || !league) return NextResponse.json({ error: "League not found" }, { status: 404 });
   if (league.host_id !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (league.league_kind !== "private") {
-    return NextResponse.json({ error: "Only private sheet leagues accept roster import" }, { status: 400 });
+    return NextResponse.json({ error: "Only private leagues accept roster import" }, { status: 400 });
   }
 
   const rows = sheetTextToNormalizedRows(sheet_text, mapping);
