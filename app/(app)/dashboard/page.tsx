@@ -18,7 +18,6 @@ export default async function DashboardPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const sp = (await searchParams) ?? {};
-  const join = typeof sp.join === "string" ? sp.join.trim().toUpperCase() : "";
   const supabase = await createClient();
   const {
     data: { user },
@@ -108,12 +107,6 @@ export default async function DashboardPage({
                     Create a private league
                   </Link>
                 </Button>
-                <div
-                  className="flex h-11 items-center justify-center sm:justify-start"
-                  title="Join a room using an invite code from your host."
-                >
-                  <JoinModal initialOpen={Boolean(join)} initialCode={join} />
-                </div>
               </>
             }
           />
