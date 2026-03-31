@@ -239,7 +239,7 @@ export function LineupPanel({
         <Button
           type="button"
           size="sm"
-          variant="outline"
+          variant="secondary"
           disabled={saving || !locked}
           onClick={() => setLocked(false)}
         >

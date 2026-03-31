@@ -148,7 +148,7 @@ export function LobbyView({
           </Button>
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             size="sm"
             className="gap-2"
             onClick={async () => {
@@ -193,7 +193,7 @@ export function LobbyView({
             <PartyPopper className="h-4 w-4" aria-hidden />
             I&apos;m ready
           </Button>
-          <Button type="button" variant="outline" onClick={() => void toggleReady(false)}>
+          <Button type="button" variant="secondary" onClick={() => void toggleReady(false)}>
             Not ready yet
           </Button>
         </div>

@@ -23,7 +23,7 @@ export default function AppError({
         <Button type="button" onClick={reset}>
           Try again
         </Button>
-        <Button asChild variant="outline">
+        <Button asChild variant="secondary">
           <Link href="/dashboard">Dashboard</Link>
         </Button>
       </div>

@@ -76,9 +76,15 @@ export default function Home() {
                 autoCapitalize="characters"
               />
             </div>
-            <Button asChild size="lg" variant={hasInvite ? "secondary" : "outline"} className="h-12 text-base">
-              <Link href={inviteHref}>Join</Link>
-            </Button>
+            {hasInvite ? (
+              <Button asChild size="lg" variant="default" className="h-12 text-base">
+                <Link href={inviteHref}>Join</Link>
+              </Button>
+            ) : (
+              <Button asChild size="lg" variant="secondary" className="h-12 text-base">
+                <Link href="/login">Join</Link>
+              </Button>
+            )}
           </div>
           <p className="text-xs font-medium text-neutral-500">
             Open beta · Built for <span className="text-blue-200/90">IPL 2026</span>

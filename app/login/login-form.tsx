@@ -121,7 +121,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
               <Button type="submit" className="h-11 flex-1 text-base" disabled={loading}>
                 Sign in
               </Button>
-              <Button type="button" variant="outline" className="h-11 flex-1 text-base" disabled={loading} onClick={signUpEmail}>
+              <Button type="button" variant="secondary" className="h-11 flex-1 text-base" disabled={loading} onClick={signUpEmail}>
                 Sign up
               </Button>
             </div>

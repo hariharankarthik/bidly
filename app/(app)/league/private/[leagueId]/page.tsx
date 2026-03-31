@@ -66,7 +66,7 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
                 <Link href={`/league/private/${leagueId}/import`}>Import rosters</Link>
               </Button>
             ) : null}
-            <Button asChild variant="outline">
+            <Button asChild variant="secondary">
               <Link href="/dashboard">Dashboard</Link>
             </Button>
           </>

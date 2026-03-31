@@ -68,7 +68,7 @@ export function AuctionControls({
       </Button>
       <Button
         size="sm"
-        variant="outline"
+        variant="secondary"
         disabled={!!loading}
         onClick={async () => {
           const data = await post("/api/auction/unsold", { room_id: roomId });
@@ -80,7 +80,7 @@ export function AuctionControls({
       </Button>
       <Button
         size="sm"
-        variant="outline"
+        variant="secondary"
         disabled={!!loading}
         onClick={() =>
           void post("/api/auction/next-player", { room_id: roomId }, { successToast: "Skipped to next player" })

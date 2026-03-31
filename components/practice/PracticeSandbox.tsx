@@ -132,7 +132,7 @@ export function PracticeSandbox() {
         <CardContent className="space-y-3 text-sm text-neutral-300">
           <div className="flex flex-wrap gap-2">
             {(["easy", "medium", "hard"] as const).map((d) => (
-              <Button key={d} size="sm" variant={difficulty === d ? "default" : "outline"} onClick={() => setDifficulty(d)}>
+              <Button key={d} size="sm" variant={difficulty === d ? "default" : "secondary"} onClick={() => setDifficulty(d)}>
                 {d}
               </Button>
             ))}
@@ -150,10 +150,10 @@ export function PracticeSandbox() {
             <Button variant="secondary" onClick={runAiTick}>
               AI tick
             </Button>
-            <Button variant="outline" onClick={resetLot}>
+            <Button variant="secondary" onClick={resetLot}>
               Reset lot
             </Button>
-            <Button variant="outline" onClick={nextLot}>
+            <Button variant="secondary" onClick={nextLot}>
               Next demo player
             </Button>
           </div>
