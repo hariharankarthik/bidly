@@ -25,6 +25,8 @@ type TeamLineupRow = {
   vice_captain_player_id: string | null;
 };
 
+const SCORE_CONFLICT = "league_id,match_id,score_team_key";
+
 async function mapCricApiNamesToPerformances(
   supabase: Awaited<ReturnType<typeof createClient>>,
   sportId: string,
@@ -80,24 +82,61 @@ export async function POST(req: NextRequest) {
 
   const { data: league, error: lErr } = await supabase
     .from("fantasy_leagues")
-    .select("id, room_id, sport_id")
+    .select("id, room_id, sport_id, host_id, league_kind")
     .eq("id", league_id)
     .single();
 
   if (lErr || !league) return NextResponse.json({ error: "League not found" }, { status: 404 });
-
-  const { data: room } = await supabase.from("auction_rooms").select("host_id").eq("id", league.room_id).single();
-  if (!room || room.host_id !== user.id) {
+  if (league.host_id !== user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { data: teams, error: tmErr } = await supabase
-    .from("auction_teams")
-    .select("id, starting_xi_player_ids, captain_player_id, vice_captain_player_id")
-    .eq("room_id", league.room_id);
+  const isPrivate = league.league_kind === "private";
 
-  if (tmErr) return NextResponse.json({ error: tmErr.message }, { status: 500 });
-  const teamList = (teams ?? []) as TeamLineupRow[];
+  let teamList: TeamLineupRow[] = [];
+  const playerToTeam = new Map<string, string>();
+  /** `auction` → auction_teams.id; `private` → private_league_teams.id */
+  let scoreKind: "auction" | "private" = "auction";
+
+  if (isPrivate) {
+    scoreKind = "private";
+    const { data: pteams, error: ptErr } = await supabase
+      .from("private_league_teams")
+      .select("id, squad_player_ids, starting_xi_player_ids, captain_player_id, vice_captain_player_id")
+      .eq("league_id", league_id);
+    if (ptErr) return NextResponse.json({ error: ptErr.message }, { status: 500 });
+    teamList = (pteams ?? []).map((t) => ({
+      id: t.id,
+      starting_xi_player_ids: t.starting_xi_player_ids ?? [],
+      captain_player_id: t.captain_player_id ?? null,
+      vice_captain_player_id: t.vice_captain_player_id ?? null,
+    }));
+    for (const t of pteams ?? []) {
+      for (const pid of t.squad_player_ids ?? []) {
+        playerToTeam.set(pid, t.id);
+      }
+    }
+  } else {
+    if (!league.room_id) {
+      return NextResponse.json({ error: "Auction league missing room_id" }, { status: 500 });
+    }
+    const { data: teams, error: tmErr } = await supabase
+      .from("auction_teams")
+      .select("id, starting_xi_player_ids, captain_player_id, vice_captain_player_id")
+      .eq("room_id", league.room_id);
+    if (tmErr) return NextResponse.json({ error: tmErr.message }, { status: 500 });
+    teamList = (teams ?? []) as TeamLineupRow[];
+
+    const { data: soldRows, error: srErr } = await supabase
+      .from("auction_results")
+      .select("player_id, team_id")
+      .eq("room_id", league.room_id)
+      .eq("is_unsold", false);
+    if (srErr) return NextResponse.json({ error: srErr.message }, { status: 500 });
+    for (const r of soldRows ?? []) {
+      if (r.player_id && r.team_id) playerToTeam.set(r.player_id, r.team_id);
+    }
+  }
 
   let unmatchedNames: string[] | undefined;
   let cricapiUsed = false;
@@ -126,7 +165,11 @@ export async function POST(req: NextRequest) {
             top_level_keys: Object.keys(o).slice(0, 40),
             cricapi_status: o.status !== undefined ? o.status : null,
             cricapi_reason:
-              typeof reasonVal === "string" ? reasonVal.slice(0, 500) : reasonVal != null ? String(reasonVal).slice(0, 500) : null,
+              typeof reasonVal === "string"
+                ? reasonVal.slice(0, 500)
+                : reasonVal != null
+                  ? String(reasonVal).slice(0, 500)
+                  : null,
             data_present: Boolean(data),
             data_keys: data ? Object.keys(data).slice(0, 40) : [],
             innings_len: data && Array.isArray(data.innings) ? data.innings.length : null,
@@ -163,19 +206,6 @@ export async function POST(req: NextRequest) {
   }
 
   if (Array.isArray(performances) && performances.length > 0) {
-    const { data: soldRows, error: srErr } = await supabase
-      .from("auction_results")
-      .select("player_id, team_id")
-      .eq("room_id", league.room_id)
-      .eq("is_unsold", false);
-
-    if (srErr) return NextResponse.json({ error: srErr.message }, { status: 500 });
-
-    const playerToTeam = new Map<string, string>();
-    for (const r of soldRows ?? []) {
-      if (r.player_id && r.team_id) playerToTeam.set(r.player_id, r.team_id);
-    }
-
     const lineupByTeam = new Map<string, TeamLineupRow>();
     for (const t of teamList) lineupByTeam.set(t.id, t);
 
@@ -220,26 +250,48 @@ export async function POST(req: NextRequest) {
       applied++;
     }
 
-    const rows = teamList.map((t) => {
-      const b = agg.get(t.id)!;
-      return {
-        league_id,
-        team_id: t.id,
-        match_id: String(effectiveMatchId),
-        match_date,
-        total_points: Math.round(b.total * 100) / 100,
-        breakdown: {
-          ...b.breakdown,
-          source: cricapiUsed ? "cricapi_v1" : "engine_v1",
-          performances_applied: applied,
-          player_lines: b.detail.slice(0, 40),
-          ...(unmatchedNames?.length ? { cricapi_unmatched_names: unmatchedNames } : {}),
-        },
-      };
-    });
+    const rows =
+      scoreKind === "private"
+        ? teamList.map((t) => {
+            const b = agg.get(t.id)!;
+            return {
+              league_id,
+              team_id: null as string | null,
+              private_team_id: t.id,
+              match_id: String(effectiveMatchId),
+              match_date,
+              total_points: Math.round(b.total * 100) / 100,
+              breakdown: {
+                ...b.breakdown,
+                source: cricapiUsed ? "cricapi_v1" : "engine_v1",
+                performances_applied: applied,
+                player_lines: b.detail.slice(0, 40),
+                league_kind: "private",
+                ...(unmatchedNames?.length ? { cricapi_unmatched_names: unmatchedNames } : {}),
+              },
+            };
+          })
+        : teamList.map((t) => {
+            const b = agg.get(t.id)!;
+            return {
+              league_id,
+              team_id: t.id,
+              private_team_id: null as string | null,
+              match_id: String(effectiveMatchId),
+              match_date,
+              total_points: Math.round(b.total * 100) / 100,
+              breakdown: {
+                ...b.breakdown,
+                source: cricapiUsed ? "cricapi_v1" : "engine_v1",
+                performances_applied: applied,
+                player_lines: b.detail.slice(0, 40),
+                ...(unmatchedNames?.length ? { cricapi_unmatched_names: unmatchedNames } : {}),
+              },
+            };
+          });
 
     const { error } = await supabase.from("fantasy_scores").upsert(rows, {
-      onConflict: "league_id,team_id,match_id",
+      onConflict: SCORE_CONFLICT,
     });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
@@ -272,26 +324,48 @@ export async function POST(req: NextRequest) {
   const scoring = getSportConfig(league.sport_id)?.scoring ?? [];
   const playingXi = scoring.find((s) => s.action === "playing_xi");
 
-  const mockRows = teamList.map((t, i) => {
-    const base = 20 + (i + 1) * 3 + (match_id.length % 7);
-    const breakdown = {
-      mock: base,
-      playing_xi: playingXi?.points ?? 0,
-      source: "mock",
-    };
-    const total = base + (playingXi?.points ?? 0);
-    return {
-      league_id,
-      team_id: t.id,
-      match_id: String(match_id),
-      match_date,
-      total_points: total,
-      breakdown,
-    };
-  });
+  const mockRows =
+    scoreKind === "private"
+      ? teamList.map((t, i) => {
+          const base = 20 + (i + 1) * 3 + (match_id.length % 7);
+          const breakdown = {
+            mock: base,
+            playing_xi: playingXi?.points ?? 0,
+            source: "mock",
+            league_kind: "private",
+          };
+          const total = base + (playingXi?.points ?? 0);
+          return {
+            league_id,
+            team_id: null as string | null,
+            private_team_id: t.id,
+            match_id: String(match_id),
+            match_date,
+            total_points: total,
+            breakdown,
+          };
+        })
+      : teamList.map((t, i) => {
+          const base = 20 + (i + 1) * 3 + (match_id.length % 7);
+          const breakdown = {
+            mock: base,
+            playing_xi: playingXi?.points ?? 0,
+            source: "mock",
+          };
+          const total = base + (playingXi?.points ?? 0);
+          return {
+            league_id,
+            team_id: t.id,
+            private_team_id: null as string | null,
+            match_id: String(match_id),
+            match_date,
+            total_points: total,
+            breakdown,
+          };
+        });
 
   const { error } = await supabase.from("fantasy_scores").upsert(mockRows, {
-    onConflict: "league_id,team_id,match_id",
+    onConflict: SCORE_CONFLICT,
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

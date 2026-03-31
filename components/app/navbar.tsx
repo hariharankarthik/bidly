@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 
 const navLink =
-  "relative rounded-md px-2 py-1.5 text-sm text-neutral-400 transition-colors hover:text-white after:absolute after:bottom-0 after:left-2 after:right-2 after:h-px after:origin-left after:scale-x-0 after:bg-emerald-400/80 after:transition-transform hover:after:scale-x-100";
+  "relative rounded-md px-2 py-1.5 text-sm text-neutral-400 transition-colors hover:text-white after:absolute after:bottom-0 after:left-2 after:right-2 after:h-px after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-violet-400 after:to-emerald-400 after:transition-transform hover:after:scale-x-100";
 
 export async function Navbar() {
   const supabase = await createClient();
@@ -14,17 +14,17 @@ export async function Navbar() {
   } = await supabase.auth.getUser();
 
   return (
-    <header className="sticky top-0 z-30 border-b border-neutral-800/80 bg-neutral-950/75 backdrop-blur-md supports-[backdrop-filter]:bg-neutral-950/60">
+    <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-neutral-950/80 backdrop-blur-md supports-[backdrop-filter]:bg-neutral-950/65">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-5">
         <Link
           href="/dashboard"
-          className="group flex items-center gap-2 text-lg font-bold tracking-tight text-white transition-colors hover:text-emerald-300"
+          className="group flex items-center gap-2 text-lg font-bold tracking-tight text-white transition-colors hover:text-violet-200"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500/25 to-amber-500/10 ring-1 ring-emerald-500/30 transition-transform group-hover:scale-105 motion-reduce:group-hover:scale-100">
-            <Sparkles className="h-4 w-4 text-emerald-400" aria-hidden />
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500/35 via-emerald-500/20 to-amber-500/15 ring-1 ring-white/10 transition-transform group-hover:scale-105 motion-reduce:group-hover:scale-100">
+            <Sparkles className="h-4 w-4 text-violet-200" aria-hidden />
           </span>
-          <span>
-            Auction<span className="text-emerald-400">Arena</span>
+          <span className="aa-display">
+            Auction<span className="bg-gradient-to-r from-emerald-300 to-violet-300 bg-clip-text text-transparent">Arena</span>
           </span>
         </Link>
         <nav className="flex items-center gap-1 sm:gap-2">

@@ -6,7 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { useCricApiMatchScoring } from "@/hooks/useCricApiMatchScoring";
-import type { AuctionTeam } from "@/lib/sports/types";
+import type { LeagueTeamDisplay } from "@/lib/sports/types";
 import { Leaderboard } from "./Leaderboard";
 import { MatchBreakdown } from "./MatchBreakdown";
 import { PointsChart } from "./PointsChart";
@@ -17,11 +17,18 @@ export function LeagueClient({
   leagueId,
   isHost,
   teams,
+  title,
+  subtitle,
+  importHref,
 }: {
-  roomId: string;
   leagueId: string | null;
   isHost: boolean;
-  teams: AuctionTeam[];
+  teams: LeagueTeamDisplay[];
+  /** Optional page heading (defaults to fantasy copy) */
+  title?: string;
+  subtitle?: string;
+  /** Host link to roster import */
+  importHref?: string;
 }) {
   const router = useRouter();
   const { scores, loading } = useLeaderboard(leagueId);
@@ -58,13 +65,26 @@ export function LeagueClient({
   if (!leagueId) {
     return (
       <p className="text-sm text-neutral-500">
-        Fantasy league unlocks when the auction completes. Finish all lots, then open this page again.
+        {subtitle ??
+          "Fantasy league unlocks when the auction completes. Finish all lots, then open this page again."}
       </p>
     );
   }
 
   return (
     <div className="space-y-6">
+      {title ? (
+        <div className="aa-card-interactive rounded-xl border border-white/10 bg-gradient-to-r from-violet-950/40 via-neutral-950/50 to-emerald-950/25 px-4 py-3">
+          <h2 className="text-lg font-semibold tracking-tight text-white">{title}</h2>
+          {importHref && isHost ? (
+            <p className="mt-1 text-xs text-neutral-400">
+              <Link href={importHref} className="text-violet-300 underline-offset-2 hover:underline">
+                Import or replace team rosters from CSV / sheet paste
+              </Link>
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       <p className="text-xs text-neutral-500">
         How points work:{" "}
         <Link href="/scoring" className="text-emerald-400 underline-offset-2 hover:underline">

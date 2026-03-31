@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import type { AuctionRoom } from "@/lib/sports/types";
 import { IPL_2026 } from "@/lib/sports/ipl";
 import { NFL_2026 } from "@/lib/sports/nfl";
-import { PlusCircle, Users } from "lucide-react";
+import { PlusCircle, Sparkles, Users, Wand2 } from "lucide-react";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -24,6 +24,13 @@ export default async function DashboardPage() {
     "there";
 
   const { data: hosted } = await supabase.from("auction_rooms").select("*").eq("host_id", user.id);
+
+  const { data: privateHosted } = await supabase
+    .from("fantasy_leagues")
+    .select("id, name, invite_code, sport_id, created_at")
+    .eq("host_id", user.id)
+    .eq("league_kind", "private")
+    .order("created_at", { ascending: false });
 
   const { data: memberships } = await supabase
     .from("auction_teams")
@@ -56,38 +63,81 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-10 px-4 py-8 sm:px-6 sm:py-10">
-      <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-950/40 via-neutral-950/60 to-amber-950/10 p-6 sm:p-8">
-        <p className="text-sm font-medium text-emerald-400/90">Welcome back</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-white sm:text-3xl">{displayName}</h1>
-        <p className="mt-2 max-w-xl text-sm leading-relaxed text-neutral-400 sm:text-base">
-          Spin up a room in seconds, share a code, and run a proper mega auction — then keep the energy going with
-          fantasy points.
-        </p>
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <Button asChild size="lg" className="h-11 gap-2 sm:min-w-[200px]">
-            <Link href="/room/create">
-              <PlusCircle className="h-4 w-4" aria-hidden />
-              Create room
-            </Link>
-          </Button>
-          <div className="flex h-11 items-center justify-center sm:justify-start">
-            <JoinModal />
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-violet-950/45 via-neutral-950/70 to-emerald-950/25 p-6 sm:p-8 shadow-[0_0_80px_-20px_rgba(139,92,246,0.35)]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_60%_at_100%_-10%,rgba(16,185,129,0.12),transparent)]" />
+        <div className="relative z-10">
+          <p className="text-sm font-medium text-violet-300/90">Welcome back</p>
+          <h1 className="aa-display mt-1 text-2xl font-bold tracking-tight text-white sm:text-3xl">{displayName}</h1>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-neutral-400 sm:text-base">
+            Run a mega auction room, or spin up a{" "}
+            <span className="text-violet-200/95">private sheet league</span> — import squads and keep the same fantasy scoring.
+          </p>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <Button
+              asChild
+              size="lg"
+              className="h-11 gap-2 border border-emerald-400/20 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-900/30 sm:min-w-[200px]"
+            >
+              <Link href="/room/create">
+                <PlusCircle className="h-4 w-4" aria-hidden />
+                Create auction room
+              </Link>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="secondary"
+              className="h-11 gap-2 border border-violet-400/25 bg-violet-950/50 text-violet-100 hover:bg-violet-900/50 sm:min-w-[200px]"
+            >
+              <Link href="/league/private/create">
+                <Wand2 className="h-4 w-4" aria-hidden />
+                Private sheet league
+              </Link>
+            </Button>
+            <div className="flex h-11 items-center justify-center sm:justify-start">
+              <JoinModal />
+            </div>
           </div>
         </div>
       </div>
 
+      {privateHosted && privateHosted.length > 0 ? (
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-violet-400" aria-hidden />
+            <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">Your sheet leagues</h2>
+          </div>
+          <div className="grid gap-3">
+            {privateHosted.map((pl) => (
+              <Link
+                key={pl.id}
+                href={`/league/private/${pl.id}`}
+                className="aa-card-interactive group flex items-center justify-between rounded-xl border border-violet-500/20 bg-neutral-950/50 px-4 py-3"
+              >
+                <div>
+                  <p className="font-medium text-neutral-100 group-hover:text-white">{pl.name}</p>
+                  <p className="text-xs text-neutral-500">
+                    Code <span className="font-mono text-violet-300/90">{pl.invite_code}</span> ·{" "}
+                    <span className="text-neutral-600">/league/p/{pl.invite_code}</span>
+                  </p>
+                </div>
+                <span className="text-xs text-violet-300/80 group-hover:text-violet-200">Open →</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section className="space-y-4">
         <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">Seasons</h2>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Card className="overflow-hidden border-emerald-500/25 bg-gradient-to-b from-emerald-950/35 to-neutral-950/80 shadow-lg shadow-emerald-950/20">
+          <Card className="overflow-hidden border-emerald-500/25 bg-gradient-to-b from-emerald-950/40 to-neutral-950/85 shadow-lg shadow-emerald-950/25">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center justify-between text-lg">
                 {IPL_2026.displayName}
-                <Badge className="border-0 bg-emerald-500/20 text-emerald-200">Live</Badge>
+                <Badge className="border-0 bg-emerald-500/25 text-emerald-100">Live</Badge>
               </CardTitle>
-              <CardDescription className="text-neutral-400">
-                Cricket · mega auction + post-draft fantasy
-              </CardDescription>
+              <CardDescription className="text-neutral-400">Cricket · mega auction + post-draft fantasy</CardDescription>
             </CardHeader>
             <CardContent className="text-xs text-neutral-500">Full player pool seeded — ready when you are.</CardContent>
           </Card>
@@ -104,11 +154,11 @@ export default async function DashboardPage() {
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4 text-neutral-500" aria-hidden />
-          <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">Your rooms</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">Your auction rooms</h2>
         </div>
         {roomRows.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-neutral-700 bg-neutral-950/40 px-6 py-12 text-center">
-            <p className="text-base font-medium text-neutral-300">No rooms yet</p>
+          <div className="rounded-2xl border border-dashed border-neutral-600/60 bg-neutral-950/40 px-6 py-12 text-center">
+            <p className="text-base font-medium text-neutral-300">No auction rooms yet</p>
             <p className="mt-2 text-sm text-neutral-500">
               Create one for your group or paste an invite code from your host.
             </p>

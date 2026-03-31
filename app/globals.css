@@ -1,13 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #070708;
+  --background: #06060a;
   --foreground: #f4f4f5;
   --aa-emerald: #10b981;
   --aa-emerald-dim: rgba(16, 185, 129, 0.12);
+  --aa-violet: #8b5cf6;
+  --aa-violet-dim: rgba(139, 92, 246, 0.14);
   --aa-gold: #fbbf24;
   --aa-card: rgba(23, 23, 23, 0.65);
   --aa-border: rgba(64, 64, 64, 0.65);
+}
+
+.aa-display {
+  font-family: var(--font-outfit), var(--font-geist-sans), system-ui, sans-serif;
+  letter-spacing: -0.02em;
 }
 
 @keyframes aa-float {
@@ -35,7 +42,23 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  -webkit-tap-highlight-color: rgba(16, 185, 129, 0.12);
+  -webkit-tap-highlight-color: rgba(139, 92, 246, 0.15);
+  position: relative;
+}
+
+body::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
 }
 
 ::selection {
@@ -80,7 +103,8 @@ body {
 
 .aa-app-shell {
   background:
-    radial-gradient(ellipse 120% 80% at 50% -30%, rgba(16, 185, 129, 0.08), transparent 55%),
+    radial-gradient(ellipse 100% 70% at 80% -20%, rgba(139, 92, 246, 0.09), transparent 55%),
+    radial-gradient(ellipse 120% 80% at 50% -30%, rgba(16, 185, 129, 0.07), transparent 55%),
     var(--background);
 }
 
@@ -91,8 +115,11 @@ body {
     transform 0.2s ease;
 }
 .aa-card-interactive:hover {
-  border-color: rgba(16, 185, 129, 0.35);
-  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.12), 0 16px 40px -20px rgba(0, 0, 0, 0.5);
+  border-color: rgba(139, 92, 246, 0.35);
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.12),
+    0 0 24px -8px rgba(16, 185, 129, 0.12),
+    0 16px 40px -20px rgba(0, 0, 0, 0.5);
   transform: translateY(-1px);
 }
 

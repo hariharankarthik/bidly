@@ -24,13 +24,6 @@ type ActiveLeagueRow = {
   sport_id: string;
 };
 
-type PerformanceRow = {
-  player_id: string;
-  batting?: PlayerMatchStats["batting"];
-  bowling?: PlayerMatchStats["bowling"];
-  fielding?: PlayerMatchStats["fielding"];
-};
-
 function parseCsv(s: string): string[] {
   return s
     .split(",")
@@ -70,6 +63,7 @@ export async function GET(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   const cricApiKey = process.env.CRICAPI_KEY?.trim();
   const debug = req.nextUrl.searchParams.get("debug") === "1";
+  const force = req.nextUrl.searchParams.get("force") === "1";
 
   const json = (body: unknown, init?: { status?: number }) => {
     const res = NextResponse.json(body, { status: init?.status });
@@ -144,7 +138,6 @@ export async function GET(req: NextRequest) {
     // Discovery: try a few pages since CricAPI is offset-based.
     const raws: unknown[] = [];
     for (const offset of [0, 1, 2, 3]) {
-      // eslint-disable-next-line no-await-in-loop
       const r = await fetchCurrentMatchesFromCricApi(cricApiKey, offset);
       raws.push(r);
       matchIds.push(...discover(r, matchDatePrefix));
@@ -234,7 +227,8 @@ export async function GET(req: NextRequest) {
   const { data: leagues, error: lErr } = await supabaseAdmin
     .from("fantasy_leagues")
     .select("id, room_id, sport_id")
-    .eq("status", "active");
+    .eq("status", "active")
+    .eq("league_kind", "auction");
   if (lErr) {
     return NextResponse.json({ error: lErr.message }, { status: 500 });
   }
@@ -252,12 +246,30 @@ export async function GET(req: NextRequest) {
   let updatedTotal = 0;
 
   for (const matchId of matchIds) {
+    // Cache: scorecards don't change for completed matches.
+    // If we've already written *any* fantasy_scores rows for this match id, skip API calls.
+    // Use `?force=1` to bypass (e.g. backfill / fix name mappings).
+    if (!force) {
+      const { data: existing, error: exErr } = await supabaseAdmin
+        .from("fantasy_scores")
+        .select("id", { head: false })
+        .eq("match_id", String(matchId))
+        .limit(1);
+      if (exErr) {
+        return NextResponse.json({ error: exErr.message }, { status: 500 });
+      }
+      if (existing && existing.length > 0) {
+        continue;
+      }
+    }
+
     // Fetch scorecard once per match id
     const raw = await fetchCricApiScorecardJson(matchId);
     let extracted = extractPerformancesFromCricApiJson(raw);
     extracted = mergeBowlingFromCricApiJson(extracted, raw);
 
     for (const league of leagues ?? []) {
+      if (!league.room_id) continue;
       const teamListRes = await supabaseAdmin
         .from("auction_teams")
         .select("id, starting_xi_player_ids, captain_player_id, vice_captain_player_id")
@@ -309,6 +321,7 @@ export async function GET(req: NextRequest) {
         return {
           league_id: league.id,
           team_id: t.id,
+          private_team_id: null as string | null,
           match_id: String(matchId),
           match_date: cronMatchDate,
           total_points: Math.round(b.total * 100) / 100,
@@ -320,7 +333,7 @@ export async function GET(req: NextRequest) {
       });
 
       const { error } = await supabaseAdmin.from("fantasy_scores").upsert(upsertRows, {
-        onConflict: "league_id,team_id,match_id",
+        onConflict: "league_id,match_id,score_team_key",
       });
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });

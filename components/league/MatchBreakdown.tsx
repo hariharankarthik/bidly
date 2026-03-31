@@ -1,9 +1,9 @@
 "use client";
 
-import type { AuctionTeam } from "@/lib/sports/types";
+import type { LeagueTeamDisplay } from "@/lib/sports/types";
 import type { ScoreRow } from "@/hooks/useLeaderboard";
 
-export function MatchBreakdown({ scores, teams }: { scores: ScoreRow[]; teams: AuctionTeam[] }) {
+export function MatchBreakdown({ scores, teams }: { scores: ScoreRow[]; teams: LeagueTeamDisplay[] }) {
   const names = new Map(teams.map((t) => [t.id, t.team_name]));
   const byMatch = new Map<string, ScoreRow[]>();
   for (const s of scores) {
@@ -25,7 +25,7 @@ export function MatchBreakdown({ scores, teams }: { scores: ScoreRow[]; teams: A
               <ul className="mt-1 space-y-1 text-sm">
                 {rows.map((r) => (
                   <li key={r.id} className="flex justify-between gap-2">
-                    <span>{names.get(r.team_id) ?? r.team_id}</span>
+                    <span>{names.get(r.scoreboard_team_id) ?? r.scoreboard_team_id}</span>
                     <span className="font-mono text-neutral-200">{Number(r.total_points).toFixed(1)}</span>
                   </li>
                 ))}

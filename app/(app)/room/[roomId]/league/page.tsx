@@ -30,10 +30,13 @@ export default async function LeaguePage({ params }: { params: Promise<{ roomId:
         </Button>
       </div>
       <LeagueClient
-        roomId={roomId}
         leagueId={league?.id ?? null}
         isHost={user?.id === room.host_id}
-        teams={teams ?? []}
+        teams={(teams ?? []).map((t) => ({
+          id: t.id,
+          team_name: t.team_name,
+          team_color: t.team_color,
+        }))}
       />
     </div>
   );

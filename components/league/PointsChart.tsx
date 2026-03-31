@@ -10,17 +10,17 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { AuctionTeam } from "@/lib/sports/types";
+import type { LeagueTeamDisplay } from "@/lib/sports/types";
 import type { ScoreRow } from "@/hooks/useLeaderboard";
 
-export function PointsChart({ scores, teams }: { scores: ScoreRow[]; teams: AuctionTeam[] }) {
+export function PointsChart({ scores, teams }: { scores: ScoreRow[]; teams: LeagueTeamDisplay[] }) {
   const teamIds = teams.map((t) => t.id);
 
   const data = useMemo(() => {
     const byMatch = new Map<string, Record<string, string | number>>();
     for (const s of scores) {
       const row = byMatch.get(s.match_id) ?? { match: s.match_id };
-      row[s.team_id] = Number(s.total_points);
+      row[s.scoreboard_team_id] = Number(s.total_points);
       byMatch.set(s.match_id, row);
     }
     return [...byMatch.values()].sort((a, b) => String(a.match).localeCompare(String(b.match)));

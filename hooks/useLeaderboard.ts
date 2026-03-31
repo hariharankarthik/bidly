@@ -6,7 +6,10 @@ import { createClient } from "@/lib/supabase/client";
 export type ScoreRow = {
   id: string;
   league_id: string;
-  team_id: string;
+  team_id: string | null;
+  private_team_id: string | null;
+  /** Use for aggregation / charts (auction team id or private team id) */
+  scoreboard_team_id: string;
   match_id: string;
   match_date: string;
   total_points: number;
@@ -30,7 +33,22 @@ export function useLeaderboard(leagueId: string | null) {
     async function load() {
       const { data } = await supabase.from("fantasy_scores").select("*").eq("league_id", leagueId);
       if (cancelled) return;
-      setScores((data as ScoreRow[]) ?? []);
+      const raw = (data ?? []) as Array<{
+        id: string;
+        league_id: string;
+        team_id: string | null;
+        private_team_id: string | null;
+        match_id: string;
+        match_date: string;
+        total_points: number;
+        breakdown: Record<string, unknown>;
+      }>;
+      setScores(
+        raw.map((r) => ({
+          ...r,
+          scoreboard_team_id: (r.team_id ?? r.private_team_id) as string,
+        })),
+      );
       setLoading(false);
     }
 

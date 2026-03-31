@@ -1,13 +1,13 @@
 "use client";
 
-import type { AuctionTeam } from "@/lib/sports/types";
+import type { LeagueTeamDisplay } from "@/lib/sports/types";
 import type { ScoreRow } from "@/hooks/useLeaderboard";
 
-export function Leaderboard({ scores, teams }: { scores: ScoreRow[]; teams: AuctionTeam[] }) {
+export function Leaderboard({ scores, teams }: { scores: ScoreRow[]; teams: LeagueTeamDisplay[] }) {
   const names = new Map(teams.map((t) => [t.id, t.team_name]));
   const totals = new Map<string, number>();
   for (const s of scores) {
-    totals.set(s.team_id, (totals.get(s.team_id) ?? 0) + Number(s.total_points));
+    totals.set(s.scoreboard_team_id, (totals.get(s.scoreboard_team_id) ?? 0) + Number(s.total_points));
   }
   const rows = [...totals.entries()].sort((a, b) => b[1] - a[1]);
 

@@ -73,6 +73,27 @@ export type AuctionTeam = {
   vice_captain_player_id?: string | null;
 };
 
+/** Private sheet league team (Supabase `private_league_teams`). */
+export type PrivateLeagueTeam = {
+  id: string;
+  league_id: string;
+  owner_id: string;
+  team_name: string;
+  team_color: string;
+  squad_player_ids: string[];
+  starting_xi_player_ids: string[];
+  captain_player_id: string | null;
+  vice_captain_player_id: string | null;
+  created_at: string;
+};
+
+/** Minimal shape for leaderboard / charts (auction or private). */
+export type LeagueTeamDisplay = {
+  id: string;
+  team_name: string;
+  team_color?: string | null;
+};
+
 export type BidRow = {
   id: string;
   room_id: string;
