@@ -48,6 +48,19 @@ export async function POST(req: NextRequest) {
 
   const squad = new Set((Array.isArray(team.squad_player_ids) ? team.squad_player_ids : []).filter(Boolean) as string[]);
 
+  // If a user tries to set an XI, require a complete XI once they have enough players.
+  if (xi.length > 0) {
+    if (squad.size < MAX_XI) {
+      return NextResponse.json(
+        { error: `You need at least ${MAX_XI} players on your squad before you can set a Playing XI` },
+        { status: 400 },
+      );
+    }
+    if (xi.length !== MAX_XI) {
+      return NextResponse.json({ error: `Playing XI must have exactly ${MAX_XI} players` }, { status: 400 });
+    }
+  }
+
   for (const pid of xi) {
     if (!squad.has(pid)) {
       return NextResponse.json({ error: "Starting XI must be players on your squad" }, { status: 400 });

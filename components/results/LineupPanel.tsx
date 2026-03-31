@@ -50,6 +50,7 @@ export function LineupPanel({
   const squadIds = useMemo(() => new Set(players.map((p) => p.playerId)), [players]);
   const nameById = useMemo(() => new Map(players.map((p) => [p.playerId, p.name])), [players]);
   const maxStarters = squadIds.size ? Math.min(MAX, squadIds.size) : 0;
+  const canSetFullXi = squadIds.size >= MAX;
   const overseasSelected = useMemo(() => {
     let n = 0;
     for (const p of players) {
@@ -80,8 +81,12 @@ export function LineupPanel({
         if (c === pid) setC(null);
         if (vc === pid) setVc(null);
       } else {
-        if (next.size >= maxStarters) {
-          toast.error(`At most ${maxStarters} starter${maxStarters === 1 ? "" : "s"}`);
+        if (!canSetFullXi) {
+          toast.error(`You need ${MAX} players on your squad to set a Starting XI`);
+          return prev;
+        }
+        if (next.size >= MAX) {
+          toast.error(`Starting XI must have exactly ${MAX} players`);
           return prev;
         }
         const pick = players.find((p) => p.playerId === pid);
@@ -99,6 +104,10 @@ export function LineupPanel({
     setSaving(true);
     try {
       const xiArr = [...xi];
+      if (xiArr.length > 0) {
+        if (!canSetFullXi) throw new Error(`You need ${MAX} players on your squad to set a Starting XI`);
+        if (xiArr.length !== MAX) throw new Error(`Starting XI must have exactly ${MAX} players`);
+      }
       const res = await fetch("/api/team/lineup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -127,13 +136,18 @@ export function LineupPanel({
         <div>
           <p className="text-sm font-semibold text-white">Starting XI</p>
           <p className="mt-1 text-xs text-neutral-400">
-            Pick your starters (max {MAX}). With your current squad ({squadIds.size}), you can select up to{" "}
-            {maxStarters || MAX}. Starters count for points; bench scores 0. Captain 2× · Vice-captain 1.5×.
+            You can set a Starting XI only once you have {MAX} players. Starters count for points; bench scores 0.
+            Captain 2× · Vice-captain 1.5×.
           </p>
+          {!canSetFullXi ? (
+            <p className="mt-1 text-xs text-amber-200/90">
+              Your squad has {squadIds.size}. Buy {MAX - squadIds.size} more to unlock XI selection.
+            </p>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-200 ring-1 ring-blue-500/20">
-            {displayedStarterCount}/{maxStarters || MAX} selected
+            {displayedStarterCount}/{MAX} selected
           </div>
           <div
             className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
@@ -153,6 +167,7 @@ export function LineupPanel({
           const on = xi.has(p.playerId);
           const isC = c === p.playerId;
           const isVC = vc === p.playerId;
+          const disablePick = locked || (!canSetFullXi && !on);
           return (
             <li
               key={p.playerId}
@@ -166,7 +181,7 @@ export function LineupPanel({
                 <input
                   type="checkbox"
                   checked={on}
-                  disabled={locked}
+                  disabled={disablePick}
                   onChange={() => toggle(p.playerId)}
                   className="h-4 w-4 rounded border-neutral-600 text-blue-500"
                 />
@@ -213,7 +228,7 @@ export function LineupPanel({
       </ul>
 
       <div className="flex flex-wrap items-center gap-2 border-t border-neutral-800/80 p-4">
-        <Button type="button" size="sm" disabled={saving || locked} onClick={() => void save()}>
+        <Button type="button" size="sm" disabled={saving || locked || !canSetFullXi} onClick={() => void save()}>
           {saving ? "Saving…" : "Save lineup"}
         </Button>
         <Button
@@ -228,7 +243,7 @@ export function LineupPanel({
         <span className="text-xs text-neutral-500">
           Starting XI:{" "}
           <span className="font-medium text-neutral-300">
-            {displayedStarterCount}/{maxStarters || MAX}
+            {displayedStarterCount}/{MAX}
           </span>
           {squadIds.size > 0 ? (
             <span className="text-neutral-600"> · Auction squad {squadIds.size}</span>
