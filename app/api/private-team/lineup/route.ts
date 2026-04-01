@@ -41,15 +41,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "League must be started before setting lineup" }, { status: 400 });
   }
 
-  // Time window gate: 3 PM – 6 AM Pacific
-  if (!isLineupChangeWindowOpen()) {
-    const { opensAt } = getWindowStatus();
-    return NextResponse.json(
-      { error: "Lineup changes are only allowed between 3 PM – 6 AM Pacific Time", opens_at: opensAt.toISOString() },
-      { status: 403 },
-    );
-  }
-
   const cfg = getSportConfig(league.sport_id);
   const xiSize = cfg?.lineup?.xiSize ?? 11;
   const maxOverseasInXi = cfg?.lineup?.maxOverseasInXi ?? null;
@@ -61,6 +52,15 @@ export async function POST(req: NextRequest) {
   const isHost = league.host_id === user.id;
   const isOwner = team.claimed_by === user.id;
   if (!isHost && !isOwner) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  // Time window gate: 3 PM – 6 AM Pacific (checked after auth to avoid info disclosure)
+  if (!isLineupChangeWindowOpen()) {
+    const { opensAt } = getWindowStatus();
+    return NextResponse.json(
+      { error: "Lineup changes are only allowed between 3 PM – 6 AM Pacific Time", opens_at: opensAt.toISOString() },
+      { status: 403 },
+    );
+  }
 
   const squad = new Set((Array.isArray(team.squad_player_ids) ? team.squad_player_ids : []).filter(Boolean) as string[]);
 
