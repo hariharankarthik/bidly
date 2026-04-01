@@ -2,7 +2,7 @@
     "crons": [
       {
         "path": "/api/cron/sync-cricapi",
-        "schedule": "0 18 * * *"
+        "schedule": "0 22 * * *"
       }
     ]
 }

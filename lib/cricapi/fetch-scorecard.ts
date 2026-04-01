@@ -1,5 +1,6 @@
 import type { BattingStats, BowlingStats, PlayerMatchStats } from "@/lib/fantasy-scoring";
 import { parseCricApiMatchUuid } from "@/lib/cricapi/match-id";
+import { CricApiError } from "@/lib/cricapi/errors";
 
 const BASE = "https://api.cricapi.com/v1";
 
@@ -17,18 +18,18 @@ export function assertCricApiScorecardPayload(payload: unknown): void {
   const status = typeof statusRaw === "string" ? statusRaw.toLowerCase() : "";
 
   if (status === "failure" || status === "error") {
-    throw new Error(reason || "CricAPI returned a failure status.");
+    throw new CricApiError(reason || "CricAPI returned a failure status.");
   }
 
   const data = o.data;
   if (data === undefined || data === null) {
     if (reason) {
-      throw new Error(`CricAPI: ${reason}`);
+      throw new CricApiError(`CricAPI: ${reason}`);
     }
     if (status && status !== "success") {
-      throw new Error(`CricAPI returned status "${String(statusRaw)}" with no scorecard data.`);
+      throw new CricApiError(`CricAPI returned status "${String(statusRaw)}" with no scorecard data.`);
     }
-    throw new Error(
+    throw new CricApiError(
       "CricAPI returned no scorecard data (check API key, credits, and match_scorecard access).",
     );
   }
@@ -222,14 +223,14 @@ export function extractPerformancesFromCricApiJson(data: unknown): CricApiMapped
 export async function fetchCricApiScorecardJson(matchId: string): Promise<unknown> {
   const apiKey = process.env.CRICAPI_KEY?.trim();
   if (!apiKey) {
-    throw new Error("CRICAPI_KEY is not set. Add it in Vercel / .env.local.");
+    throw new CricApiError("CRICAPI_KEY is not set. Add it in Vercel / .env.local.");
   }
   const id = parseCricApiMatchUuid(matchId);
   const url = `${BASE}/match_scorecard?apikey=${encodeURIComponent(apiKey)}&id=${encodeURIComponent(id)}`;
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) {
     const t = await res.text();
-    throw new Error(`CricAPI HTTP ${res.status}: ${t.slice(0, 200)}`);
+    throw new CricApiError(`CricAPI HTTP ${res.status}: ${t.slice(0, 200)}`, res.status);
   }
   const json = (await res.json()) as unknown;
   assertCricApiScorecardPayload(json);

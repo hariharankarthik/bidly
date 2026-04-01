@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
-import { useCricApiMatchScoring } from "@/hooks/useCricApiMatchScoring";
+import { useCricApiMatchScoring, CricApiSyncError } from "@/hooks/useCricApiMatchScoring";
 import type { LeagueTeamDisplay } from "@/lib/sports/types";
 import { Leaderboard } from "./Leaderboard";
 import { MatchBreakdown } from "./MatchBreakdown";
@@ -38,6 +38,7 @@ export function LeagueClient({
   const { loading: cricBusy, syncFromCricApi } = useCricApiMatchScoring();
   const [cricId, setCricId] = useState("");
   const [cricMatchDate, setCricMatchDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [rateLimited, setRateLimited] = useState(false);
 
   async function mockMatch() {
     if (!leagueId) return;
@@ -146,7 +147,7 @@ export function LeagueClient({
             <Button
               type="button"
               variant="secondary"
-              disabled={busy || cricBusy || !cricId.trim()}
+              disabled={busy || cricBusy || !cricId.trim() || rateLimited}
               onClick={() =>
                 void (async () => {
                   if (!leagueId) return;
@@ -164,12 +165,23 @@ export function LeagueClient({
                     }
                     router.refresh();
                   } catch (e) {
-                    toast.error(e instanceof Error ? e.message : "CricAPI sync failed");
+                    if (e instanceof CricApiSyncError) {
+                      toast.error(e.friendlyTitle, {
+                        description: e.friendlyMessage,
+                      });
+                      if (e.code === "RATE_LIMIT") {
+                        setRateLimited(true);
+                      }
+                    } else {
+                      toast.error("Something went wrong", {
+                        description: e instanceof Error ? e.message : "CricAPI sync failed",
+                      });
+                    }
                   }
                 })()
               }
             >
-              {cricBusy ? "Fetching…" : "Fetch CricAPI & score"}
+              {cricBusy ? "Fetching…" : rateLimited ? "API limit reached" : "Fetch CricAPI & score"}
             </Button>
           </div>
           <p className="text-xs text-neutral-500">
