@@ -11,7 +11,7 @@ export function StartLeagueButton({ leagueId }: { leagueId: string }) {
 
   async function start() {
     const ok = window.confirm(
-      "Once started, scoring begins and team claiming continues. Are you sure?",
+      "Once started, scoring begins and unclaiming teams is no longer allowed. Continue?",
     );
     if (!ok) return;
 
