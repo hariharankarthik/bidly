@@ -88,7 +88,7 @@ async function main() {
   const { data: pteams, error: ptErr } = await supabase
     .from("private_league_teams")
     .select(
-      "id, team_name, squad_player_ids, starting_xi_player_ids, captain_player_id, vice_captain_player_id",
+      "id, team_name, squad_player_ids, squad_player_prices, starting_xi_player_ids, captain_player_id, vice_captain_player_id",
     )
     .eq("league_id", leagueId);
   if (ptErr) {
@@ -108,9 +108,16 @@ async function main() {
 
   const playerToTeam = new Map<string, string>();
   const squadByTeamId = new Map<string, string[]>();
+  const spentByTeamId = new Map<string, Record<string, number>>();
   for (const t of pteams ?? []) {
     const squad = ((t.squad_player_ids as string[] | null) ?? []) as string[];
     squadByTeamId.set(t.id as string, squad);
+    spentByTeamId.set(
+      t.id as string,
+      (t.squad_player_prices && typeof t.squad_player_prices === "object"
+        ? (t.squad_player_prices as Record<string, number>)
+        : {}) ?? {},
+    );
     for (const pid of (t.squad_player_ids as string[] | null) ?? []) {
       playerToTeam.set(pid, t.id);
     }
@@ -132,10 +139,14 @@ async function main() {
     }
   }
 
-  const pickTopByPrice = (playerIds: string[], k: number): string[] => {
+  const pickTopBySpent = (teamId: string, playerIds: string[], k: number): string[] => {
+    const spent = spentByTeamId.get(teamId) ?? {};
     return playerIds
       .slice()
       .sort((a, b) => {
+        const sa = Number(spent[a] ?? 0);
+        const sb = Number(spent[b] ?? 0);
+        if (sb !== sa) return sb - sa;
         const pa = priceByPlayerId.get(a) ?? 0;
         const pb = priceByPlayerId.get(b) ?? 0;
         if (pb !== pa) return pb - pa;
@@ -149,7 +160,7 @@ async function main() {
     const xi = (t.starting_xi_player_ids ?? []).filter(Boolean);
     if (xi.length > 0) continue;
     const squad = (squadByTeamId.get(t.id) ?? []).filter(Boolean);
-    autoXiByTeamId.set(t.id, pickTopByPrice(squad, xiSize));
+    autoXiByTeamId.set(t.id, pickTopBySpent(t.id, squad, xiSize));
   }
 
   const { data: dbPlayers, error: plErr } = await supabase
@@ -202,10 +213,10 @@ async function main() {
     const rawXi = (t.starting_xi_player_ids ?? []).filter(Boolean);
     const isAutoXi = rawXi.length === 0 && (autoXiByTeamId.get(t.id)?.length ?? 0) > 0;
     const xi = isAutoXi ? (autoXiByTeamId.get(t.id) ?? []) : rawXi;
-    const picked = pickTopByPrice(xi, 2);
+    const picked = pickTopBySpent(t.id, xi, 2);
     const captain = t.captain_player_id ?? picked[0] ?? null;
     const vice = t.vice_captain_player_id ?? picked[1] ?? null;
-    const label = isAutoXi ? `auto-xi (top ${xiSize} by base_price)` : rawXi.length ? "manual xi" : "empty xi (no auto-xi)";
+    const label = isAutoXi ? `auto-xi (top ${xiSize} by spend)` : rawXi.length ? "manual xi" : "empty xi (no auto-xi)";
     const capName = captain ? nameById.get(captain) ?? captain : "—";
     const vcName = vice ? nameById.get(vice) ?? vice : "—";
     console.log(`${t.team_name}: ${label} · XI=${xi.length} · C=${capName} · VC=${vcName}`);
@@ -227,7 +238,7 @@ async function main() {
     const rawXi = (teamRow.starting_xi_player_ids ?? []).filter(Boolean);
     const isAutoXi = rawXi.length === 0 && (autoXiByTeamId.get(teamId)?.length ?? 0) > 0;
     const xi = isAutoXi ? (autoXiByTeamId.get(teamId) ?? []) : rawXi;
-    const picked = pickTopByPrice(xi, 2);
+    const picked = pickTopBySpent(teamId, xi, 2);
     const captainPlayerId = teamRow.captain_player_id ?? picked[0] ?? null;
     const viceCaptainPlayerId = teamRow.vice_captain_player_id ?? picked[1] ?? null;
     const { effective, counted, multiplier } = effectivePointsWithLineup(baseTotal, row.player_id, {
