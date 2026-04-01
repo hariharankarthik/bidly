@@ -1,22 +1,2243 @@
 [
   {
-    "name": "Virat Kohli",
+    "name": "Ruturaj Gaikwad",
+    "ipl_team": "Chennai Super Kings",
     "nationality": "India",
     "is_overseas": false,
     "role": "BAT",
-    "base_price": 200,
-    "tier": "marquee",
-    "stats": { "matches": 237, "runs": 7263, "average": 37.25, "strike_rate": 130.41 },
-    "image_url": "/images/players/virat-kohli.jpg"
+    "base_price": 0,
+    "tier": "retained"
   },
   {
-    "name": "Rashid Khan",
+    "name": "MS Dhoni",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "WK",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Dewald Brevis",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "South Africa",
+    "is_overseas": true,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Ayush Mhatre",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Urvil Patel",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "WK",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Anshul Kamboj",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Jamie Overton",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "England",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Ramakrishna Ghosh",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Shivam Dube",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Khaleel Ahmed",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Noor Ahmad",
+    "ipl_team": "Chennai Super Kings",
     "nationality": "Afghanistan",
     "is_overseas": true,
     "role": "BOWL",
-    "base_price": 190,
-    "tier": "marquee",
-    "stats": { "wickets": 140 },
-    "image_url": null
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Mukesh Choudhary",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Nathan Ellis",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "Australia",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Shreyas Gopal",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Gurjapneet Singh",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Sanju Samson",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "WK",
+    "base_price": 0,
+    "tier": "trade"
+  },
+  {
+    "name": "Akeal Hosein",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "West Indies",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 200,
+    "tier": "auction"
+  },
+  {
+    "name": "Prashant Veer",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 1420,
+    "tier": "auction"
+  },
+  {
+    "name": "Kartik Sharma",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "WK",
+    "base_price": 1420,
+    "tier": "auction"
+  },
+  {
+    "name": "Matthew Short",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "Australia",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 150,
+    "tier": "auction"
+  },
+  {
+    "name": "Aman Khan",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 40,
+    "tier": "auction"
+  },
+  {
+    "name": "Sarfaraz Khan",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 75,
+    "tier": "auction"
+  },
+  {
+    "name": "Rahul Chahar",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 100,
+    "tier": "auction"
+  },
+  {
+    "name": "Matt Henry",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "New Zealand",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 200,
+    "tier": "auction"
+  },
+  {
+    "name": "Zak Foulkes",
+    "ipl_team": "Chennai Super Kings",
+    "nationality": "Australia",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 75,
+    "tier": "auction"
+  },
+  {
+    "name": "KL Rahul",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "WK",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Karun Nair",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Abishek Porel",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "WK",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Tristan Stubbs",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "South Africa",
+    "is_overseas": true,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Axar Patel",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Sameer Rizvi",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Ashutosh Sharma",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Vipraj Nigam",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Ajay Mandal",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Tripurana Vijay",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Madhav Tiwari",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Mitchell Starc",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "Australia",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "T. Natarajan",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Mukesh Kumar",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Dushmantha Chameera",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "Sri Lanka",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Kuldeep Yadav",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Nitish Rana",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "trade"
+  },
+  {
+    "name": "Auqib Dar",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 840,
+    "tier": "auction"
+  },
+  {
+    "name": "Ben Duckett",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "England",
+    "is_overseas": true,
+    "role": "WK",
+    "base_price": 200,
+    "tier": "auction"
+  },
+  {
+    "name": "David Miller",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "South Africa",
+    "is_overseas": true,
+    "role": "BAT",
+    "base_price": 200,
+    "tier": "auction"
+  },
+  {
+    "name": "Pathum Nissanka",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "Sri Lanka",
+    "is_overseas": true,
+    "role": "BAT",
+    "base_price": 400,
+    "tier": "auction"
+  },
+  {
+    "name": "Lungi Ngidi",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "South Africa",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 200,
+    "tier": "auction"
+  },
+  {
+    "name": "Sahil Parakh",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Prithvi Shaw",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 75,
+    "tier": "auction"
+  },
+  {
+    "name": "Kyle Jamieson",
+    "ipl_team": "Delhi Capitals",
+    "nationality": "New Zealand",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 200,
+    "tier": "auction"
+  },
+  {
+    "name": "Shubman Gill",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Sai Sudharsan",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Kumar Kushagra",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "WK",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Anuj Rawat",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "WK",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Jos Buttler",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "England",
+    "is_overseas": true,
+    "role": "WK",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Nishant Sindhu",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Glenn Phillips",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "New Zealand",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Washington Sundar",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Arshad Khan",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Shahrukh Khan",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Rahul Tewatia",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Kagiso Rabada",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "South Africa",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Mohammed Siraj",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Prasidh Krishna",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Ishant Sharma",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Gurnoor Singh Brar",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Rashid Khan",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "Afghanistan",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Manav Suthar",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Sai Kishore",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Jayant Yadav",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Ashok Sharma",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 90,
+    "tier": "auction"
+  },
+  {
+    "name": "Jason Holder",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "West Indies",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 700,
+    "tier": "auction"
+  },
+  {
+    "name": "Tom Banton",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "England",
+    "is_overseas": true,
+    "role": "BAT",
+    "base_price": 200,
+    "tier": "auction"
+  },
+  {
+    "name": "Luke Wood",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "England",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 75,
+    "tier": "auction"
+  },
+  {
+    "name": "Prithviraj Yarra",
+    "ipl_team": "Gujarat Titans",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Ajinkya Rahane",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Rinku Singh",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Angkrish Raghuvanshi",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Manish Pandey",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Rovman Powell",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "West Indies",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Anukul Roy",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Ramandeep Singh",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Vaibhav Arora",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Sunil Narine",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "West Indies",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Varun Chakaravarthy",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Harshit Rana",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Umran Malik",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Cameron Green",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "Australia",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 2520,
+    "tier": "auction"
+  },
+  {
+    "name": "Matheesha Pathirana",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "Sri Lanka",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 1800,
+    "tier": "auction"
+  },
+  {
+    "name": "Finn Allen",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "New Zealand",
+    "is_overseas": true,
+    "role": "WK",
+    "base_price": 200,
+    "tier": "auction"
+  },
+  {
+    "name": "Tejasvi Singh",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "WK",
+    "base_price": 300,
+    "tier": "auction"
+  },
+  {
+    "name": "Prashant Solanki",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Kartik Tyagi",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Rahul Tripathi",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 75,
+    "tier": "auction"
+  },
+  {
+    "name": "Tim Seifert",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "New Zealand",
+    "is_overseas": true,
+    "role": "WK",
+    "base_price": 150,
+    "tier": "auction"
+  },
+  {
+    "name": "Sarthak Ranjan",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Daksh Kamra",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Akash Deep",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 100,
+    "tier": "auction"
+  },
+  {
+    "name": "Rachin Ravindra",
+    "ipl_team": "Kolkata Knight Riders",
+    "nationality": "New Zealand",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 200,
+    "tier": "auction"
+  },
+  {
+    "name": "Rishabh Pant",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "WK",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Ayush Badoni",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Abdul Samad",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Aiden Markram",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "South Africa",
+    "is_overseas": true,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Himmat Singh",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Matthew Breetzke",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "South Africa",
+    "is_overseas": true,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Nicholas Pooran",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "West Indies",
+    "is_overseas": true,
+    "role": "WK",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Mitchell Marsh",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "Australia",
+    "is_overseas": true,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Shahbaz Ahmed",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Arshin Kulkarni",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Mayank Yadav",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Avesh Khan",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Mohsin Khan",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "M. Siddharth",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Digvesh Rathi",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Prince Yadav",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Akash Singh",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Arjun Tendulkar",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "trade"
+  },
+  {
+    "name": "Mohammed Shami",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "trade"
+  },
+  {
+    "name": "Anrich Nortje",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "South Africa",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 200,
+    "tier": "auction"
+  },
+  {
+    "name": "Wanindu Hasaranga",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "Sri Lanka",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 200,
+    "tier": "auction"
+  },
+  {
+    "name": "Mukul Choudhary",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "WK",
+    "base_price": 260,
+    "tier": "auction"
+  },
+  {
+    "name": "Naman Tiwari",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 100,
+    "tier": "auction"
+  },
+  {
+    "name": "Akshat Raghuwanshi",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 220,
+    "tier": "auction"
+  },
+  {
+    "name": "Josh Inglis",
+    "ipl_team": "Lucknow Super Giants",
+    "nationality": "Australia",
+    "is_overseas": true,
+    "role": "BAT",
+    "base_price": 860,
+    "tier": "auction"
+  },
+  {
+    "name": "Rohit Sharma",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Suryakumar Yadav",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Robin Minz",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "WK",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Ryan Rickelton",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "South Africa",
+    "is_overseas": true,
+    "role": "WK",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Tilak Varma",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Hardik Pandya",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Naman Dhir",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Mitchell Santner",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "New Zealand",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Will Jacks",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "England",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Corbin Bosch",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "South Africa",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Raj Bawa",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Trent Boult",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "New Zealand",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Jasprit Bumrah",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Deepak Chahar",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Ashwani Kumar",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Raghu Sharma",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Allah Ghazanfar",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "Afghanistan",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Mayank Markande",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "trade"
+  },
+  {
+    "name": "Shardul Thakur",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "trade"
+  },
+  {
+    "name": "Sherfane Rutherford",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "West Indies",
+    "is_overseas": true,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "trade"
+  },
+  {
+    "name": "Quinton de Kock",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "South Africa",
+    "is_overseas": true,
+    "role": "WK",
+    "base_price": 100,
+    "tier": "auction"
+  },
+  {
+    "name": "Atharva Ankolekar",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Mohammad Izhar",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Danish Malewar",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Mayank Rawat",
+    "ipl_team": "Mumbai Indians",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Shreyas Iyer",
+    "ipl_team": "Punjab Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Nehal Wadhera",
+    "ipl_team": "Punjab Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Vishnu Vinod",
+    "ipl_team": "Punjab Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "WK",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Harnoor Pannu",
+    "ipl_team": "Punjab Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Pyla Avinash",
+    "ipl_team": "Punjab Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Prabhsimran Singh",
+    "ipl_team": "Punjab Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "WK",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Shashank Singh",
+    "ipl_team": "Punjab Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Marcus Stoinis",
+    "ipl_team": "Punjab Kings",
+    "nationality": "Australia",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Harpreet Brar",
+    "ipl_team": "Punjab Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Marco Jansen",
+    "ipl_team": "Punjab Kings",
+    "nationality": "South Africa",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Azmatullah Omarzai",
+    "ipl_team": "Punjab Kings",
+    "nationality": "Afghanistan",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Priyansh Arya",
+    "ipl_team": "Punjab Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Musheer Khan",
+    "ipl_team": "Punjab Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Suryansh Shedge",
+    "ipl_team": "Punjab Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Mitch Owen",
+    "ipl_team": "Punjab Kings",
+    "nationality": "Australia",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Arshdeep Singh",
+    "ipl_team": "Punjab Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Yuzvendra Chahal",
+    "ipl_team": "Punjab Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Vyshak Vijaykumar",
+    "ipl_team": "Punjab Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Yash Thakur",
+    "ipl_team": "Punjab Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Xavier Bartlett",
+    "ipl_team": "Punjab Kings",
+    "nationality": "Australia",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Lockie Ferguson",
+    "ipl_team": "Punjab Kings",
+    "nationality": "New Zealand",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Cooper Connolly",
+    "ipl_team": "Punjab Kings",
+    "nationality": "Australia",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 300,
+    "tier": "auction"
+  },
+  {
+    "name": "Ben Dwarshuis",
+    "ipl_team": "Punjab Kings",
+    "nationality": "Australia",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 440,
+    "tier": "auction"
+  },
+  {
+    "name": "Vishal Nishad",
+    "ipl_team": "Punjab Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Pravin Dubey",
+    "ipl_team": "Punjab Kings",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Shubham Dubey",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Vaibhav Suryavanshi",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Lhuan-dre Pretorius",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "South Africa",
+    "is_overseas": true,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Shimron Hetmyer",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "West Indies",
+    "is_overseas": true,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Yashasvi Jaiswal",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Dhruv Jurel",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "WK",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Riyan Parag",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Yudhvir Singh Charak",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Jofra Archer",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "England",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Tushar Deshpande",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Sandeep Sharma",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Kwena Maphaka",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "South Africa",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Nandre Burger",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "South Africa",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Ravindra Jadeja",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "trade"
+  },
+  {
+    "name": "Sam Curran",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "England",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "trade"
+  },
+  {
+    "name": "Donovan Ferreira",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "South Africa",
+    "is_overseas": true,
+    "role": "WK",
+    "base_price": 0,
+    "tier": "trade"
+  },
+  {
+    "name": "Ravi Bishnoi",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 720,
+    "tier": "auction"
+  },
+  {
+    "name": "Sushant Mishra",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 90,
+    "tier": "auction"
+  },
+  {
+    "name": "Vignesh Puthur",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Yash Raj Punja",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Ravi Singh",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "WK",
+    "base_price": 95,
+    "tier": "auction"
+  },
+  {
+    "name": "Brijesh Sharma",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Aman Rao",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Adam Milne",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "New Zealand",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 240,
+    "tier": "auction"
+  },
+  {
+    "name": "Kuldeep Sen",
+    "ipl_team": "Rajasthan Royals",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 75,
+    "tier": "auction"
+  },
+  {
+    "name": "Rajat Patidar",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Virat Kohli",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Tim David",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "Singapore",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Devdutt Padikkal",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Phil Salt",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "England",
+    "is_overseas": true,
+    "role": "WK",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Jitesh Sharma",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "WK",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Krunal Pandya",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Jacob Bethell",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "England",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Romario Shepherd",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "West Indies",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Swapnil Singh",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Josh Hazlewood",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "Australia",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Bhuvneshwar Kumar",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Rasikh Salam",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Yash Dayal",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Suyash Sharma",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Nuwan Thushara",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "Sri Lanka",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Abhinandan Singh",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Venkatesh Iyer",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 700,
+    "tier": "auction"
+  },
+  {
+    "name": "Jacob Duffy",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "New Zealand",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 200,
+    "tier": "auction"
+  },
+  {
+    "name": "Mangesh Yadav",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 520,
+    "tier": "auction"
+  },
+  {
+    "name": "Satvik Deswal",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Jordan Cox",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "England",
+    "is_overseas": true,
+    "role": "BAT",
+    "base_price": 75,
+    "tier": "auction"
+  },
+  {
+    "name": "Kanishk Chouhan",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Vihaan Malhotra",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Vicky Ostwal",
+    "ipl_team": "Royal Challengers Bengaluru",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Travis Head",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "Australia",
+    "is_overseas": true,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Abhishek Sharma",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Aniket Verma",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "R Smaran",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BAT",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Ishan Kishan",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "WK",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Heinrich Klaasen",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "South Africa",
+    "is_overseas": true,
+    "role": "WK",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Nitish Kumar Reddy",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Harsh Dubey",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Kamindu Mendis",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "Sri Lanka",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Harshal Patel",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Brydon Carse",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "England",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Pat Cummins",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "Australia",
+    "is_overseas": true,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Jaydev Unadkat",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Eshan Malinga",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Zeeshan Ansari",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 0,
+    "tier": "retained"
+  },
+  {
+    "name": "Shivang Kumar",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "ALL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Salil Arora",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "WK",
+    "base_price": 150,
+    "tier": "auction"
+  },
+  {
+    "name": "Krains Fuletra",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Praful Hinge",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Amit Kumar",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Onkar Tarmale",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Sakib Hussain",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 30,
+    "tier": "auction"
+  },
+  {
+    "name": "Liam Livingstone",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "England",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 1300,
+    "tier": "auction"
+  },
+  {
+    "name": "Shivam Mavi",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "India",
+    "is_overseas": false,
+    "role": "BOWL",
+    "base_price": 75,
+    "tier": "auction"
+  },
+  {
+    "name": "Jack Edwards",
+    "ipl_team": "Sunrisers Hyderabad",
+    "nationality": "Australia",
+    "is_overseas": true,
+    "role": "ALL",
+    "base_price": 300,
+    "tier": "auction"
   }
 ]
