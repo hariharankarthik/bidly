@@ -21,6 +21,8 @@ export function LeagueClient({
   title,
   subtitle,
   importHref,
+  leagueStatus,
+  myTeamId,
 }: {
   leagueId: string | null;
   isHost: boolean;
@@ -31,6 +33,9 @@ export function LeagueClient({
   subtitle?: string;
   /** Host link to roster import */
   importHref?: string;
+  leagueStatus?: string;
+  /** Highlight user's team in leaderboard */
+  myTeamId?: string;
 }) {
   const router = useRouter();
   const { scores, loading } = useLeaderboard(leagueId);
@@ -110,7 +115,12 @@ export function LeagueClient({
           )}
         </div>
       ) : null}
-      {isHost ? (
+      {isHost && leagueStatus === "draft" ? (
+        <div className="rounded-xl border border-neutral-800 bg-neutral-950/40 p-4 text-sm text-neutral-400">
+          Scoring tools will be available once the league starts.
+        </div>
+      ) : null}
+      {isHost && leagueStatus !== "draft" ? (
         <div className="space-y-3 rounded-xl border border-neutral-800 bg-neutral-950/40 p-4">
           <p className="text-xs font-medium text-neutral-400">Host tools</p>
           <div className="flex flex-wrap gap-2">
@@ -194,7 +204,7 @@ export function LeagueClient({
         </div>
       ) : null}
       {loading ? <p className="text-sm text-neutral-500">Loading scores…</p> : null}
-      <Leaderboard scores={scores} teams={teams} ownersByTeamId={ownersByTeamId} />
+      <Leaderboard scores={scores} teams={teams} ownersByTeamId={ownersByTeamId} todayDate={new Date().toISOString().slice(0, 10)} myTeamId={myTeamId} />
       <PointsChart scores={scores} teams={teams} />
       <MatchBreakdown scores={scores} teams={teams} />
     </div>

@@ -30,11 +30,14 @@ export async function POST(req: NextRequest) {
 
   const { data: league } = await supabase
     .from("fantasy_leagues")
-    .select("id, host_id, league_kind, sport_id")
+    .select("id, host_id, league_kind, sport_id, status")
     .eq("id", team.league_id)
     .maybeSingle();
   if (!league || league.league_kind !== "private") {
     return NextResponse.json({ error: "League not found" }, { status: 404 });
+  }
+  if (league.status !== "active") {
+    return NextResponse.json({ error: "League must be started before setting lineup" }, { status: 400 });
   }
 
   const cfg = getSportConfig(league.sport_id);

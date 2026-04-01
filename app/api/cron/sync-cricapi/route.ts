@@ -18,8 +18,9 @@ type TeamLineupRow = {
 
 type ActiveLeagueRow = {
   id: string;
-  room_id: string;
+  room_id: string | null;
   sport_id: string;
+  league_kind: string;
 };
 
 type PendingSyncRow = {
@@ -466,12 +467,14 @@ export async function GET(req: NextRequest) {
 
   const { data: leagues, error: lErr } = await supabaseAdmin
     .from("fantasy_leagues")
-    .select("id, room_id, sport_id")
-    .eq("status", "active")
-    .eq("league_kind", "auction");
+    .select("id, room_id, sport_id, league_kind")
+    .eq("status", "active");
   if (lErr) {
     return NextResponse.json({ error: lErr.message }, { status: 500 });
   }
+
+  const auctionLeagues = (leagues ?? []).filter((l: ActiveLeagueRow) => l.league_kind === "auction");
+  const privateLeagues = (leagues ?? []).filter((l: ActiveLeagueRow) => l.league_kind === "private");
 
   // Preload players for each sport once.
   const sportIds = [...new Set((leagues ?? []).map((l: ActiveLeagueRow) => l.sport_id))];
@@ -555,7 +558,7 @@ export async function GET(req: NextRequest) {
       throw e;
     }
 
-    for (const league of leagues ?? []) {
+    for (const league of auctionLeagues) {
       if (!league.room_id) continue;
       const teamListRes = await supabaseAdmin
         .from("auction_teams")
@@ -624,6 +627,97 @@ export async function GET(req: NextRequest) {
       });
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+    }
+
+    // --- Score private leagues for the same match ---
+    for (const league of privateLeagues) {
+      // Skip if this match+league is already scored (idempotent / manual trigger already ran)
+      if (!force) {
+        const { data: existingScore } = await supabaseAdmin
+          .from("fantasy_scores")
+          .select("id", { head: false })
+          .eq("league_id", league.id)
+          .eq("match_id", String(matchId))
+          .limit(1);
+        if (existingScore && existingScore.length > 0) continue;
+      }
+
+      const pteamsRes = await supabaseAdmin
+        .from("private_league_teams")
+        .select("id, squad_player_ids, starting_xi_player_ids, captain_player_id, vice_captain_player_id")
+        .eq("league_id", league.id);
+      const pteams = (pteamsRes.data ?? []) as Array<{
+        id: string;
+        squad_player_ids: string[];
+        starting_xi_player_ids: string[] | null;
+        captain_player_id: string | null;
+        vice_captain_player_id: string | null;
+      }>;
+      if (pteams.length === 0) continue;
+
+      const pTeamList: TeamLineupRow[] = pteams.map((t) => ({
+        id: t.id,
+        starting_xi_player_ids: t.starting_xi_player_ids ?? [],
+        captain_player_id: t.captain_player_id ?? null,
+        vice_captain_player_id: t.vice_captain_player_id ?? null,
+      }));
+      const pPlayerToTeam = new Map<string, string>();
+      for (const t of pteams) {
+        for (const pid of t.squad_player_ids ?? []) {
+          pPlayerToTeam.set(pid, t.id);
+        }
+      }
+
+      const players = playersBySport.get(league.sport_id) ?? [];
+      const { performances: pPerformances } = mapCricApiExtractedToPerformances(players, extracted);
+
+      const pAgg = new Map<string, { total: number; breakdown: Record<string, number> }>();
+      for (const t of pTeamList) pAgg.set(t.id, { total: 0, breakdown: {} });
+
+      for (const row of pPerformances) {
+        const teamId = pPlayerToTeam.get(row.player_id);
+        if (!teamId) continue;
+        const teamRow = pTeamList.find((t) => t.id === teamId);
+        if (!teamRow) continue;
+
+        const stats: PlayerMatchStats = { batting: row.batting, bowling: row.bowling, fielding: row.fielding };
+        const { total: baseTotal, breakdown } = scorePlayerMatch(stats);
+        const { effective, counted } = effectivePointsWithLineup(baseTotal, row.player_id, {
+          startingXiPlayerIds: teamRow.starting_xi_player_ids ?? [],
+          captainPlayerId: teamRow.captain_player_id ?? null,
+          viceCaptainPlayerId: teamRow.vice_captain_player_id ?? null,
+        });
+        if (!counted) continue;
+        const bucket = pAgg.get(teamId);
+        if (!bucket) continue;
+        bucket.total += effective;
+        mergeBreakdown(bucket.breakdown, breakdown);
+        updatedTotal += 1;
+      }
+
+      const pUpsertRows = pTeamList.map((t) => {
+        const b = pAgg.get(t.id)!;
+        return {
+          league_id: league.id,
+          team_id: null as string | null,
+          private_team_id: t.id,
+          match_id: String(matchId),
+          match_date: effectiveMatchDate,
+          total_points: Math.round(b.total * 100) / 100,
+          breakdown: {
+            source: "cricapi_v1",
+            engine_version: "auctionroom-ipl-v1",
+            league_kind: "private",
+          },
+        };
+      });
+
+      const { error: pErr } = await supabaseAdmin.from("fantasy_scores").upsert(pUpsertRows, {
+        onConflict: "league_id,match_id,score_team_key",
+      });
+      if (pErr) {
+        return NextResponse.json({ error: pErr.message }, { status: 500 });
       }
     }
 

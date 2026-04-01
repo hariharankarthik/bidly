@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       name,
       sport_id,
       league_kind: "private",
-      status: "active",
+      status: "draft",
       invite_code,
       room_id: null,
     })
