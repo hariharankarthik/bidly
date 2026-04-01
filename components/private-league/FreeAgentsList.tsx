@@ -77,7 +77,7 @@ export function FreeAgentsList({ players }: { players: FreeAgent[] }) {
               role="radio"
               aria-checked={roleFilter === r}
               onClick={() => setRoleFilter(r)}
-              className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
+              className={`cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium transition ${
                 roleFilter === r
                   ? "bg-violet-600/25 text-violet-200 ring-1 ring-violet-500/30"
                   : "bg-white/5 text-neutral-400 hover:bg-white/10 hover:text-neutral-200"
@@ -92,7 +92,7 @@ export function FreeAgentsList({ players }: { players: FreeAgent[] }) {
             value={teamFilter}
             onChange={(e) => setTeamFilter(e.target.value)}
             aria-label="Filter by IPL team"
-            className="h-8 rounded-lg border border-white/10 bg-neutral-950/50 px-2 text-xs text-neutral-200 focus:border-violet-500/40 focus:outline-none"
+            className="h-8 cursor-pointer rounded-lg border border-white/10 bg-neutral-950/50 px-2 text-xs text-neutral-200 focus:border-violet-500/40 focus:outline-none"
           >
             <option value="All">All teams</option>
             {iplTeams.map((t) => (
