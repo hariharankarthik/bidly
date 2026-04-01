@@ -6,6 +6,7 @@ import { mapCricApiExtractedToPerformances } from "@/lib/cricapi/map-player-name
 import { fetchScorecardWithFallback } from "@/lib/scoring/fetch-with-fallback";
 import { parseCricsheetMatch } from "@/lib/cricsheet/fetch-scorecard";
 import { CricApiError, isCricApiError } from "@/lib/cricapi/errors";
+import { computeEffectiveXi } from "@/lib/xi-composition";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
@@ -646,11 +647,12 @@ export async function GET(req: NextRequest) {
 
       const pteamsRes = await supabaseAdmin
         .from("private_league_teams")
-        .select("id, squad_player_ids, starting_xi_player_ids, captain_player_id, vice_captain_player_id, claimed_by, xi_confirmed_at")
+        .select("id, squad_player_ids, squad_player_prices, starting_xi_player_ids, captain_player_id, vice_captain_player_id, claimed_by, xi_confirmed_at")
         .eq("league_id", league.id);
       const pteams = (pteamsRes.data ?? []) as Array<{
         id: string;
         squad_player_ids: string[];
+        squad_player_prices: Record<string, number> | null;
         starting_xi_player_ids: string[] | null;
         captain_player_id: string | null;
         vice_captain_player_id: string | null;
@@ -687,6 +689,50 @@ export async function GET(req: NextRequest) {
       const players = playersBySport.get(league.sport_id) ?? [];
       const { performances: pPerformances } = mapCricApiExtractedToPerformances(players, extracted);
 
+      // Build matchPlayerIds set and role/price maps for auto-substitution
+      const matchPlayerIds = new Set(pPerformances.map((row) => row.player_id));
+      const allSquadIds = [...new Set(pteams.flatMap((t) => t.squad_player_ids ?? []))];
+      const roleMap = new Map<string, string>();
+      const basePriceMap = new Map<string, number>();
+      if (allSquadIds.length > 0) {
+        const { data: playerMeta } = await supabaseAdmin
+          .from("players")
+          .select("id, role, base_price")
+          .in("id", allSquadIds);
+        for (const p of playerMeta ?? []) {
+          roleMap.set(p.id, p.role ?? "BAT");
+          basePriceMap.set(p.id, p.base_price ?? 0);
+        }
+      }
+
+      // Compute effective XI (with auto-subs) per team
+      const effectiveLineups = new Map<string, { xi: string[]; captain: string | null; vc: string | null }>();
+      for (const t of pteams) {
+        const squad = t.squad_player_ids ?? [];
+        const xi = t.starting_xi_player_ids ?? [];
+        const spent = t.squad_player_prices ?? {};
+        const teamPriceMap = new Map<string, number>();
+        for (const pid of squad) {
+          teamPriceMap.set(pid, Number(spent[pid] ?? 0) || (basePriceMap.get(pid) ?? 0));
+        }
+
+        const { effectiveXi, effectiveCaptain, effectiveVc, substitutions } = computeEffectiveXi({
+          xiPlayerIds: xi,
+          squadPlayerIds: squad,
+          captainId: t.captain_player_id ?? null,
+          vcId: t.vice_captain_player_id ?? null,
+          matchPlayerIds,
+          roleMap,
+          priceMap: teamPriceMap,
+        });
+        if (substitutions.length > 0) {
+          console.log(
+            `[auto-sub] League ${league.id}, Team ${t.id}: ${substitutions.map((s) => `${s.out} → ${s.in}`).join(", ")}`,
+          );
+        }
+        effectiveLineups.set(t.id, { xi: effectiveXi, captain: effectiveCaptain, vc: effectiveVc });
+      }
+
       const pAgg = new Map<string, { total: number; breakdown: Record<string, number> }>();
       for (const t of pTeamList) pAgg.set(t.id, { total: 0, breakdown: {} });
 
@@ -696,12 +742,13 @@ export async function GET(req: NextRequest) {
         const teamRow = pTeamList.find((t) => t.id === teamId);
         if (!teamRow) continue;
 
+        const eff = effectiveLineups.get(teamId);
         const stats: PlayerMatchStats = { batting: row.batting, bowling: row.bowling, fielding: row.fielding };
         const { total: baseTotal, breakdown } = scorePlayerMatch(stats);
         const { effective, counted } = effectivePointsWithLineup(baseTotal, row.player_id, {
-          startingXiPlayerIds: teamRow.starting_xi_player_ids ?? [],
-          captainPlayerId: teamRow.captain_player_id ?? null,
-          viceCaptainPlayerId: teamRow.vice_captain_player_id ?? null,
+          startingXiPlayerIds: eff?.xi ?? teamRow.starting_xi_player_ids ?? [],
+          captainPlayerId: eff?.captain ?? teamRow.captain_player_id ?? null,
+          viceCaptainPlayerId: eff?.vc ?? teamRow.vice_captain_player_id ?? null,
         });
         if (!counted) continue;
         const bucket = pAgg.get(teamId);

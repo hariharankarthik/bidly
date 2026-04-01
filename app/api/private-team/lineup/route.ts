@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getSportConfig } from "@/lib/sports";
+import { validateXiComposition } from "@/lib/xi-composition";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -85,6 +86,23 @@ export async function POST(req: NextRequest) {
         { error: `Playing XI can include at most ${maxOverseasInXi} overseas players` },
         { status: 400 },
       );
+    }
+  }
+
+  // Validate team composition (roles)
+  if (xi.length > 0) {
+    const { data: xiRolePlayers, error: rErr } = await supabase
+      .from("players")
+      .select("id, role")
+      .in("id", xi);
+    if (rErr) return NextResponse.json({ error: rErr.message }, { status: 500 });
+    if ((xiRolePlayers ?? []).length !== xi.length) {
+      return NextResponse.json({ error: "One or more players in XI not found" }, { status: 400 });
+    }
+    const roleMap = new Map((xiRolePlayers ?? []).map((p) => [p.id, p.role as string]));
+    const composition = validateXiComposition(xi, roleMap);
+    if (!composition.valid) {
+      return NextResponse.json({ error: composition.errors.join("; ") }, { status: 400 });
     }
   }
 

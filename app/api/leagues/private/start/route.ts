@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getSportConfig } from "@/lib/sports";
+import { autoPickXi } from "@/lib/xi-composition";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -40,16 +41,18 @@ export async function POST(req: NextRequest) {
     .select("id, squad_player_ids, squad_player_prices, starting_xi_player_ids, captain_player_id, vice_captain_player_id")
     .eq("league_id", league_id);
 
-  // Fetch base_price fallback for all players across all squads
+  // Fetch base_price + role for all players across all squads
   const allPlayerIds = [...new Set((teams ?? []).flatMap((t) => (t.squad_player_ids as string[]) ?? []))];
   const priceByPlayerId = new Map<string, number>();
+  const roleByPlayerId = new Map<string, string>();
   if (allPlayerIds.length > 0) {
     const { data: playerRows } = await supabase
       .from("players")
-      .select("id, base_price")
+      .select("id, base_price, role")
       .in("id", allPlayerIds);
     for (const p of playerRows ?? []) {
       priceByPlayerId.set(p.id, p.base_price ?? 0);
+      roleByPlayerId.set(p.id, p.role ?? "BAT");
     }
   }
 
@@ -64,20 +67,19 @@ export async function POST(req: NextRequest) {
 
     const spent = (t.squad_player_prices as Record<string, number>) ?? {};
 
-    // Sort by: squad_player_prices desc → base_price desc → id asc
-    const sorted = squad.slice().sort((a, b) => {
-      const sa = Number(spent[a] ?? 0) || 0;
-      const sb = Number(spent[b] ?? 0) || 0;
-      if (sb !== sa) return sb - sa;
-      const pa = priceByPlayerId.get(a) ?? 0;
-      const pb = priceByPlayerId.get(b) ?? 0;
-      if (pb !== pa) return pb - pa;
-      return a.localeCompare(b);
-    });
+    // Build price map: squad_player_prices → base_price fallback
+    const teamPriceMap = new Map<string, number>();
+    for (const pid of squad) {
+      teamPriceMap.set(pid, Number(spent[pid] ?? 0) || (priceByPlayerId.get(pid) ?? 0));
+    }
 
-    const autoXi = sorted.slice(0, xiSize);
-    const captainId = autoXi[0] ?? null;
-    const vcId = autoXi[1] ?? null;
+    // Role-aware auto-pick
+    const { xi: autoXi, captain: captainId, viceCaptain: vcId } = autoPickXi(
+      squad,
+      roleByPlayerId,
+      teamPriceMap,
+      xiSize,
+    );
 
     // Conditional update: only set if XI is still empty (prevents overwriting concurrent manual saves)
     const { error: tErr } = await supabase

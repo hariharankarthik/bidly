@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PlayerMeta } from "@/components/player/PlayerMeta";
+import { validateXiComposition } from "@/lib/xi-composition";
 
 export type PrivateTeamPlayer = {
   playerId: string;
@@ -57,7 +58,30 @@ export function PrivateLineupPanel({
 
   const hasCaptainAndVc = Boolean(c) && Boolean(vc);
   const xiComplete = xi.size === xiSize;
-  const canSave = canSetFullXi && xiComplete && hasCaptainAndVc;
+
+  // Role composition validation
+  const compositionResult = useMemo(() => {
+    if (xi.size === 0) return { valid: true, errors: [] };
+    const roleMap = new Map<string, string>();
+    for (const p of players) {
+      if (xi.has(p.playerId)) roleMap.set(p.playerId, p.role);
+    }
+    return validateXiComposition([...xi], roleMap);
+  }, [players, xi]);
+
+  const roleCounts = useMemo(() => {
+    let wk = 0, bat = 0, bowl = 0, all = 0;
+    for (const p of players) {
+      if (!xi.has(p.playerId)) continue;
+      if (p.role === "WK") wk++;
+      else if (p.role === "BAT") bat++;
+      else if (p.role === "BOWL") bowl++;
+      else if (p.role === "ALL") all++;
+    }
+    return { wk, bat, bowl, all };
+  }, [players, xi]);
+
+  const canSave = canSetFullXi && xiComplete && hasCaptainAndVc && compositionResult.valid;
 
   function toggle(pid: string) {
     setXi((prev) => {
@@ -156,6 +180,14 @@ export function PrivateLineupPanel({
               ✈️ {overseasSelected}/{maxOverseasInXi}
             </div>
           ) : null}
+          {xi.size > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              <span className="rounded-full bg-neutral-900/30 px-2 py-0.5 text-[10px] font-medium text-neutral-400 ring-1 ring-white/10" title="Wicketkeepers">🧤 {roleCounts.wk}</span>
+              <span className="rounded-full bg-neutral-900/30 px-2 py-0.5 text-[10px] font-medium text-neutral-400 ring-1 ring-white/10" title="Batsmen">🏏 {roleCounts.bat}</span>
+              <span className="rounded-full bg-neutral-900/30 px-2 py-0.5 text-[10px] font-medium text-neutral-400 ring-1 ring-white/10" title="Bowlers">🎯 {roleCounts.bowl}</span>
+              <span className="rounded-full bg-neutral-900/30 px-2 py-0.5 text-[10px] font-medium text-neutral-400 ring-1 ring-white/10" title="All-rounders">🏏🎯 {roleCounts.all}</span>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -213,11 +245,19 @@ export function PrivateLineupPanel({
       </ul>
 
       <div className="flex flex-wrap items-center gap-2 border-t border-neutral-800/80 p-4">
-        <Button type="button" size="sm" disabled={saving || !canSave} onClick={() => void save()}>
+        <Button
+          type="button"
+          size="sm"
+          disabled={saving || !canSave}
+          onClick={() => void save()}
+          title={!compositionResult.valid ? compositionResult.errors.join("; ") : undefined}
+        >
           {saving ? "Saving…" : "Save lineup"}
         </Button>
         <span className="text-xs text-neutral-500">
-          {xi.size === xiSize && !hasCaptainAndVc ? (
+          {xi.size === xiSize && !compositionResult.valid ? (
+            <span className="text-red-300">{compositionResult.errors.join("; ")}</span>
+          ) : xi.size === xiSize && !hasCaptainAndVc ? (
             <span className="text-amber-300">Select Captain &amp; Vice-Captain to save</span>
           ) : (
             <>
