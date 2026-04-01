@@ -66,8 +66,8 @@ export async function POST(req: NextRequest) {
 
     // Sort by: squad_player_prices desc → base_price desc → id asc
     const sorted = squad.slice().sort((a, b) => {
-      const sa = Number(spent[a] ?? 0);
-      const sb = Number(spent[b] ?? 0);
+      const sa = Number(spent[a] ?? 0) || 0;
+      const sb = Number(spent[b] ?? 0) || 0;
       if (sb !== sa) return sb - sa;
       const pa = priceByPlayerId.get(a) ?? 0;
       const pb = priceByPlayerId.get(b) ?? 0;
@@ -79,7 +79,8 @@ export async function POST(req: NextRequest) {
     const captainId = autoXi[0] ?? null;
     const vcId = autoXi[1] ?? null;
 
-    await supabase
+    // Conditional update: only set if XI is still empty (prevents overwriting concurrent manual saves)
+    const { error: tErr } = await supabase
       .from("private_league_teams")
       .update({
         starting_xi_player_ids: autoXi,
@@ -87,7 +88,12 @@ export async function POST(req: NextRequest) {
         vice_captain_player_id: vcId,
         xi_confirmed_at: now,
       })
-      .eq("id", t.id);
+      .eq("id", t.id)
+      .eq("starting_xi_player_ids", "{}");
+
+    if (tErr) {
+      return NextResponse.json({ error: `Failed to auto-populate XI for team: ${tErr.message}` }, { status: 500 });
+    }
   }
 
   const { error: uErr } = await supabase
