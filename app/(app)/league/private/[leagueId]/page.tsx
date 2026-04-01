@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { LeagueClient } from "@/components/league/LeagueClient";
@@ -16,6 +17,8 @@ import { UnclaimTeamButton } from "@/components/private-league/UnclaimTeamButton
 import { ReadOnlyLineup } from "@/components/private-league/ReadOnlyLineup";
 import { PrivateLineupPanel, type PrivateTeamPlayer } from "@/components/private-league/PrivateLineupPanel";
 import { FreeAgentsList, type FreeAgent } from "@/components/private-league/FreeAgentsList";
+import { LeagueTabNav } from "@/components/private-league/LeagueTabNav";
+import { LeagueTabContent } from "@/components/private-league/LeagueTabContent";
 
 export default async function PrivateLeaguePage({ params }: { params: Promise<{ leagueId: string }> }) {
   const { leagueId } = await params;
@@ -80,13 +83,14 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
     p_sport_id: league.sport_id,
     p_excluded_ids: pickedIds.length ? pickedIds : [],
   });
-  const freeAgents: FreeAgent[] = ((freeAgentRows ?? []) as { id: string; name: string; role: string; nationality: string | null; is_overseas: boolean; base_price: number }[]).map((p) => ({
+  const freeAgents: FreeAgent[] = ((freeAgentRows ?? []) as { id: string; name: string; role: string; nationality: string | null; is_overseas: boolean; base_price: number; ipl_team: string | null }[]).map((p) => ({
     id: p.id,
     name: p.name,
     role: p.role,
     nationality: p.nationality,
     is_overseas: p.is_overseas,
     base_price: p.base_price ?? 0,
+    ipl_team: p.ipl_team ?? null,
   }));
 
   return (
@@ -145,173 +149,177 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
         </div>
       ) : null}
 
+      {/* Tab navigation — Free Agents | Rosters | Leaderboard */}
       {privateTeams && privateTeams.length > 0 ? (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">Rosters</h2>
-            <span className="text-xs text-neutral-600">{privateTeams.length} teams</span>
-          </div>
-          {!myClaimedTeamId ? (
-            <div className="rounded-xl border border-white/10 bg-neutral-950/50 p-4 text-sm text-neutral-300">
-              <p className="font-medium text-white">Claim your team</p>
-              <p className="mt-1 text-xs text-neutral-500">
-                Pick the team you own in this league. Once claimed, you can set your Playing XI and C/VC.
-              </p>
-            </div>
-          ) : null}
-          <div className="grid gap-3">
-            {privateTeams.map((t) => {
-              const squad = ((t.squad_player_ids as string[]) ?? [])
-                .map((id) => playersById.get(id))
-                .filter(Boolean) as { id: string; name: string; role: string; nationality: string | null; is_overseas: boolean }[];
-              const overseas = squad.filter((p) => p.is_overseas).length;
-              const cId = t.captain_player_id as string | null;
-              const vcId = t.vice_captain_player_id as string | null;
-              const claimedBy = (t.claimed_by as string | null) ?? null;
-              const xiConfirmed = Boolean(t.xi_confirmed_at);
-              const isMine = Boolean(user?.id && claimedBy === user.id);
-              const canClaim = Boolean(user?.id) && !claimedBy && !myClaimedTeamId;
-
-              return (
-                <details
-                  key={t.id}
-                  className="group rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl open:border-blue-500/25"
-                >
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <span
-                        className="h-3.5 w-3.5 shrink-0 rounded-full ring-2 ring-white/10"
-                        style={{ backgroundColor: t.team_color ?? "#3B82F6" }}
-                        aria-hidden
-                      />
-                      <div>
-                        <p className="font-medium text-white">{t.team_name}</p>
-                        <p className="text-xs text-neutral-500">
-                          {squad.length} players · {overseas} overseas
-                          {claimedBy ? (
-                            <>
-                              {" "}
-                              · <span className="text-neutral-400">Owner</span>{" "}
-                              <span className="font-medium text-neutral-200">
-                                {ownerNameByUserId.get(claimedBy) ?? "Member"}
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              {" "}
-                              · <span className="text-neutral-500">Unclaimed</span>
-                            </>
-                          )}
-                        </p>
-                        {league.status === "active" && claimedBy ? (
-                          xiConfirmed ? (
-                            <p className="text-xs text-green-400">XI set ✓</p>
-                          ) : (
-                            <p className="text-xs text-amber-400">XI not set</p>
-                          )
-                        ) : null}
-                      </div>
+        <Suspense>
+          <LeagueTabNav
+            counts={{
+              "free-agents": freeAgents.length,
+              rosters: privateTeams.length,
+            }}
+          />
+          <LeagueTabContent>
+            {{
+              "free-agents": (
+                <section className="space-y-3">
+                  <FreeAgentsList players={freeAgents} />
+                </section>
+              ),
+              rosters: (
+                <section className="space-y-3">
+                  {!myClaimedTeamId ? (
+                    <div className="rounded-xl border border-white/10 bg-neutral-950/50 p-4 text-sm text-neutral-300">
+                      <p className="font-medium text-white">Claim your team</p>
+                      <p className="mt-1 text-xs text-neutral-500">
+                        Pick the team you own in this league. Once claimed, you can set your Playing XI and C/VC.
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {isMine ? <span className="text-xs font-semibold text-blue-200">Your team</span> : null}
-                      {isMine && league.status === "draft" ? <UnclaimTeamButton leagueId={leagueId} teamId={t.id} /> : null}
-                      {canClaim ? <ClaimTeamButton leagueId={leagueId} teamId={t.id} /> : null}
-                      <span className="text-xs text-neutral-500 group-open:text-neutral-300">Toggle</span>
-                    </div>
-                  </summary>
-
-                  <div className="mt-4 grid gap-2">
-                    {squad
-                      .slice()
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map((p) => {
-                        const isC = cId === p.id;
-                        const isVC = vcId === p.id;
-                        return (
-                          <div
-                            key={p.id}
-                            className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-neutral-950/35 px-3 py-2 text-sm"
-                          >
-                            <div className="min-w-0">
-                              <p className="truncate text-neutral-100">
-                                <PlayerMeta variant="inline" role={p.role} nationality={p.nationality} isOverseas={p.is_overseas} className="mr-2 align-middle" />
-                                {p.name}{" "}
-                                {isC ? <span className="text-blue-200">(C)</span> : isVC ? <span className="text-sky-200">(VC)</span> : null}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    {squad.length === 0 ? (
-                      <Card className="border-amber-500/25 bg-amber-950/15">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-base">No players imported</CardTitle>
-                        </CardHeader>
-                        <CardContent className="text-sm text-amber-100/90">
-                          {isHost ? "Import a sheet to populate this roster." : "Ask the host to import a sheet."}
-                        </CardContent>
-                      </Card>
-                    ) : null}
-                  </div>
-
-                  {isMine && league.status === "active" ? (
-                    <PrivateLineupPanel
-                      privateTeamId={t.id}
-                      players={squad.map(
-                        (p) =>
-                          ({
-                            playerId: p.id,
-                            name: p.name,
-                            role: p.role,
-                            nationality: p.nationality,
-                            isOverseas: p.is_overseas,
-                          }) satisfies PrivateTeamPlayer,
-                      )}
-                      xiSize={xiSize}
-                      maxOverseasInXi={maxOverseasInXi}
-                      initialXi={Array.isArray(t.starting_xi_player_ids) ? (t.starting_xi_player_ids as string[]) : []}
-                      captainPlayerId={t.captain_player_id as string | null}
-                      viceCaptainPlayerId={t.vice_captain_player_id as string | null}
-                    />
-                  ) : isMine && league.status === "draft" ? (
-                    <p className="mt-4 text-sm text-neutral-400">Set your Playing XI once the host starts the league.</p>
-                  ) : isMine && league.status === "completed" ? (
-                    <p className="mt-4 text-sm text-neutral-400">League has ended.</p>
                   ) : null}
-
-                  {!isMine && Array.isArray(t.starting_xi_player_ids) && (t.starting_xi_player_ids as string[]).length > 0 ? (
-                    <ReadOnlyLineup
-                      players={(t.starting_xi_player_ids as string[])
+                  <div className="grid gap-3">
+                    {privateTeams.map((t) => {
+                      const squad = ((t.squad_player_ids as string[]) ?? [])
                         .map((id) => playersById.get(id))
-                        .filter(Boolean)
-                        .map((p) => ({ name: p!.name, role: p!.role, nationality: p!.nationality, isOverseas: p!.is_overseas }))}
-                      captainName={cId ? (playersById.get(cId)?.name ?? null) : null}
-                      viceCaptainName={vcId ? (playersById.get(vcId)?.name ?? null) : null}
-                      xiSize={xiSize}
-                    />
-                  ) : null}
-                </details>
-              );
-            })}
-          </div>
-        </section>
+                        .filter(Boolean) as { id: string; name: string; role: string; nationality: string | null; is_overseas: boolean }[];
+                      const overseas = squad.filter((p) => p.is_overseas).length;
+                      const cId = t.captain_player_id as string | null;
+                      const vcId = t.vice_captain_player_id as string | null;
+                      const claimedBy = (t.claimed_by as string | null) ?? null;
+                      const xiConfirmed = Boolean(t.xi_confirmed_at);
+                      const isMine = Boolean(user?.id && claimedBy === user.id);
+                      const canClaim = Boolean(user?.id) && !claimedBy && !myClaimedTeamId;
+
+                      return (
+                        <details
+                          key={t.id}
+                          className="group rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl open:border-blue-500/25"
+                        >
+                          <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <span
+                                className="h-3.5 w-3.5 shrink-0 rounded-full ring-2 ring-white/10"
+                                style={{ backgroundColor: t.team_color ?? "#3B82F6" }}
+                                aria-hidden
+                              />
+                              <div>
+                                <p className="font-medium text-white">{t.team_name}</p>
+                                <p className="text-xs text-neutral-500">
+                                  {squad.length} players · {overseas} overseas
+                                  {claimedBy ? (
+                                    <>
+                                      {" "}
+                                      · <span className="text-neutral-400">Owner</span>{" "}
+                                      <span className="font-medium text-neutral-200">
+                                        {ownerNameByUserId.get(claimedBy) ?? "Member"}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      {" "}
+                                      · <span className="text-neutral-500">Unclaimed</span>
+                                    </>
+                                  )}
+                                </p>
+                                {league.status === "active" && claimedBy ? (
+                                  xiConfirmed ? (
+                                    <p className="text-xs text-green-400">XI set ✓</p>
+                                  ) : (
+                                    <p className="text-xs text-amber-400">XI not set</p>
+                                  )
+                                ) : null}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {isMine ? <span className="text-xs font-semibold text-blue-200">Your team</span> : null}
+                              {isMine && league.status === "draft" ? <UnclaimTeamButton leagueId={leagueId} teamId={t.id} /> : null}
+                              {canClaim ? <ClaimTeamButton leagueId={leagueId} teamId={t.id} /> : null}
+                              <span className="text-xs text-neutral-500 group-open:text-neutral-300">Toggle</span>
+                            </div>
+                          </summary>
+
+                          <div className="mt-4 grid gap-2">
+                            {squad
+                              .slice()
+                              .sort((a, b) => a.name.localeCompare(b.name))
+                              .map((p) => {
+                                const isC = cId === p.id;
+                                const isVC = vcId === p.id;
+                                return (
+                                  <div
+                                    key={p.id}
+                                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-neutral-950/35 px-3 py-2 text-sm"
+                                  >
+                                    <div className="min-w-0">
+                                      <p className="truncate text-neutral-100">
+                                        <PlayerMeta variant="inline" role={p.role} nationality={p.nationality} isOverseas={p.is_overseas} className="mr-2 align-middle" />
+                                        {p.name}{" "}
+                                        {isC ? <span className="text-blue-200">(C)</span> : isVC ? <span className="text-sky-200">(VC)</span> : null}
+                                      </p>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            {squad.length === 0 ? (
+                              <Card className="border-amber-500/25 bg-amber-950/15">
+                                <CardHeader className="pb-2">
+                                  <CardTitle className="text-base">No players imported</CardTitle>
+                                </CardHeader>
+                                <CardContent className="text-sm text-amber-100/90">
+                                  {isHost ? "Import a sheet to populate this roster." : "Ask the host to import a sheet."}
+                                </CardContent>
+                              </Card>
+                            ) : null}
+                          </div>
+
+                          {isMine && league.status === "active" ? (
+                            <PrivateLineupPanel
+                              privateTeamId={t.id}
+                              players={squad.map(
+                                (p) =>
+                                  ({
+                                    playerId: p.id,
+                                    name: p.name,
+                                    role: p.role,
+                                    nationality: p.nationality,
+                                    isOverseas: p.is_overseas,
+                                  }) satisfies PrivateTeamPlayer,
+                              )}
+                              xiSize={xiSize}
+                              maxOverseasInXi={maxOverseasInXi}
+                              initialXi={Array.isArray(t.starting_xi_player_ids) ? (t.starting_xi_player_ids as string[]) : []}
+                              captainPlayerId={t.captain_player_id as string | null}
+                              viceCaptainPlayerId={t.vice_captain_player_id as string | null}
+                            />
+                          ) : isMine && league.status === "draft" ? (
+                            <p className="mt-4 text-sm text-neutral-400">Set your Playing XI once the host starts the league.</p>
+                          ) : isMine && league.status === "completed" ? (
+                            <p className="mt-4 text-sm text-neutral-400">League has ended.</p>
+                          ) : null}
+
+                          {!isMine && Array.isArray(t.starting_xi_player_ids) && (t.starting_xi_player_ids as string[]).length > 0 ? (
+                            <ReadOnlyLineup
+                              players={(t.starting_xi_player_ids as string[])
+                                .map((id) => playersById.get(id))
+                                .filter(Boolean)
+                                .map((p) => ({ name: p!.name, role: p!.role, nationality: p!.nationality, isOverseas: p!.is_overseas }))}
+                              captainName={cId ? (playersById.get(cId)?.name ?? null) : null}
+                              viceCaptainName={vcId ? (playersById.get(vcId)?.name ?? null) : null}
+                              xiSize={xiSize}
+                            />
+                          ) : null}
+                        </details>
+                      );
+                    })}
+                  </div>
+                </section>
+              ),
+              leaderboard: (
+                <LeagueClient leagueId={league.id} isHost={isHost} teams={teams} ownersByTeamId={ownersByTeamId} leagueStatus={league.status} myTeamId={myClaimedTeamId ?? undefined} />
+              ),
+            }}
+          </LeagueTabContent>
+        </Suspense>
       ) : null}
 
-      {/* Free agents — players not on any team's squad */}
-      {privateTeams && privateTeams.length > 0 ? (
-        <details className="group rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl open:border-violet-500/25">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
-              Free Agents{" "}
-              <span className="text-neutral-600">({freeAgents.length})</span>
-            </h2>
-            <span className="text-xs text-neutral-500 group-open:text-neutral-300">Toggle</span>
-          </summary>
-          <FreeAgentsList players={freeAgents} />
-        </details>
-      ) : null}
-
-      <LeagueClient leagueId={league.id} isHost={isHost} teams={teams} ownersByTeamId={ownersByTeamId} leagueStatus={league.status} myTeamId={myClaimedTeamId ?? undefined} />
       {isHost ? (
         <details className="group rounded-2xl border border-red-500/15 bg-red-950/[0.12] p-5 ring-1 ring-red-500/10">
           <summary
