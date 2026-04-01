@@ -270,20 +270,28 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
       ) : null}
       <LeagueClient leagueId={league.id} isHost={isHost} teams={teams} ownersByTeamId={ownersByTeamId} leagueStatus={league.status} myTeamId={myClaimedTeamId ?? undefined} />
       {isHost ? (
-        <section
-          className="rounded-2xl border border-red-500/15 bg-red-950/[0.12] p-5 ring-1 ring-red-500/10"
-          aria-labelledby="private-league-danger-heading"
-        >
-          <h2 id="private-league-danger-heading" className="text-xs font-semibold uppercase tracking-[0.18em] text-red-300/65">
-            Danger zone
-          </h2>
-          <p className="mt-2 max-w-xl text-sm text-neutral-500">
-            Permanently delete this league, all imported rosters, scores, and the invite link. Members will lose access. This cannot be undone.
-          </p>
-          <div className="mt-4">
-            <DeletePrivateLeagueButton leagueId={leagueId} leagueName={league.name} />
+        <details className="group rounded-2xl border border-red-500/15 bg-red-950/[0.12] p-5 ring-1 ring-red-500/10">
+          <summary
+            className="flex cursor-pointer list-none items-center justify-between gap-3 select-none"
+            aria-label="Toggle danger zone"
+          >
+            <h2
+              id="private-league-danger-heading"
+              className="text-xs font-semibold uppercase tracking-[0.18em] text-red-300/65"
+            >
+              Danger zone
+            </h2>
+            <span className="text-xs text-neutral-500 group-open:text-neutral-300">Toggle</span>
+          </summary>
+          <div className="mt-3">
+            <p className="text-xs text-neutral-500 sm:text-sm sm:whitespace-nowrap">
+              Permanently delete this league, all imported rosters, scores, and the invite link. Members will lose access. This cannot be undone.
+            </p>
+            <div className="mt-4">
+              <DeletePrivateLeagueButton leagueId={leagueId} leagueName={league.name} />
+            </div>
           </div>
-        </section>
+        </details>
       ) : null}
     </div>
   );

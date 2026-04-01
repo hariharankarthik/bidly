@@ -37,10 +37,10 @@ export function DeletePrivateLeagueButton({ leagueId, leagueName }: { leagueId: 
   return (
     <Button
       type="button"
-      variant="outline"
+      variant="destructive"
       size="sm"
       disabled={busy}
-      className="border-red-500/30 bg-transparent font-medium text-red-300/90 shadow-none ring-red-500/10 hover:border-red-400/40 hover:bg-red-950/35 hover:text-red-200 focus-visible:ring-red-500/40"
+      className="font-medium"
       onClick={() => void remove()}
     >
       {busy ? "Deleting…" : "Delete this league"}
