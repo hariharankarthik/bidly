@@ -10,6 +10,7 @@ import type { LeagueTeamDisplay } from "@/lib/sports/types";
 import { PlayerMeta } from "@/components/player/PlayerMeta";
 import { ClaimTeamButton } from "@/components/private-league/ClaimTeamButton";
 import { InviteShareButtons } from "@/components/private-league/InviteShareButtons";
+import { DeletePrivateLeagueButton } from "@/components/private-league/DeletePrivateLeagueButton";
 import { StartLeagueButton } from "@/components/private-league/StartLeagueButton";
 import { UnclaimTeamButton } from "@/components/private-league/UnclaimTeamButton";
 import { ReadOnlyLineup } from "@/components/private-league/ReadOnlyLineup";
@@ -102,6 +103,7 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
                 <Link href={`/league/private/${leagueId}/import`}>Import rosters</Link>
               </Button>
             ) : null}
+            {isHost ? <DeletePrivateLeagueButton leagueId={leagueId} leagueName={league.name} /> : null}
             <Button asChild variant="secondary">
               <Link href="/dashboard">Dashboard</Link>
             </Button>
