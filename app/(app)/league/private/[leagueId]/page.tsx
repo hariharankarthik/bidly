@@ -96,11 +96,6 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
                 <span className="text-neutral-400">{claimedCount}</span>/{teams.length} claimed
               </span>
             ) : null}
-            {league.status === "active" && claimedTeams.length > 0 ? (
-              <span>
-                <span className={allXiReady ? "text-green-400" : "text-amber-400"}>{xiReadyCount}</span>/{claimedTeams.length} XI set
-              </span>
-            ) : null}
           </span>
         }
         actions={
@@ -145,16 +140,6 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
               <p className="mt-1 text-xs text-neutral-500">
                 Pick the team you own in this league. Once claimed, you can set your Playing XI and C/VC.
               </p>
-            </div>
-          ) : null}
-          {league.status === "active" && !allXiReady ? (
-            <div className="rounded-xl border border-amber-500/25 bg-amber-950/20 px-4 py-3 text-sm text-amber-100/90">
-              ⏳ Scoring begins once all teams set their Playing XI ({xiReadyCount}/{claimedTeams.length} ready)
-            </div>
-          ) : null}
-          {league.status === "active" && allXiReady ? (
-            <div className="rounded-xl border border-green-500/25 bg-green-950/20 px-4 py-3 text-sm text-green-100/90">
-              ✅ All teams ready — scoring active
             </div>
           ) : null}
           <div className="grid gap-3">
