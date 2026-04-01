@@ -134,8 +134,12 @@ export function autoPickXi(
   }
 
   const xi = [...picked].sort(byPrice);
-  const captain = xi[0];
-  const viceCaptain = xi[1];
+  const captain = xi[0] ?? null;
+  const viceCaptain = xi[1] ?? xi[0] ?? null;
+  if (!captain || !viceCaptain) {
+    // Squad too small to form a valid XI — return what we have
+    return { xi, captain: xi[0] ?? "", viceCaptain: xi[1] ?? xi[0] ?? "" };
+  }
   return { xi, captain, viceCaptain };
 }
 
@@ -294,12 +298,17 @@ export function computeEffectiveXi(opts: {
 
       // Tentatively make the swap
       const testXi = effectiveXi.map((id, i) => (i === idx ? candidate : id));
-      // Remove any other DNP players we haven't replaced yet for a fair composition check
-      // Actually, validate the whole XI as-is (some DNP may not get subs)
       const { valid } = validateXiComposition(testXi, roleMap);
       if (valid) {
-        bestSub = candidate;
-        break;
+        // Prefer role-matching: if this candidate matches the DNP player's role, pick immediately
+        const dnpRole = roleMap.get(dnpPlayer) ?? "";
+        const candidateRole = roleMap.get(candidate) ?? "";
+        if (candidateRole === dnpRole) {
+          bestSub = candidate;
+          break;
+        }
+        // Otherwise, remember first valid sub but keep looking for a role match
+        if (!bestSub) bestSub = candidate;
       }
     }
 

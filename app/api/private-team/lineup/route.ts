@@ -96,6 +96,9 @@ export async function POST(req: NextRequest) {
       .select("id, role")
       .in("id", xi);
     if (rErr) return NextResponse.json({ error: rErr.message }, { status: 500 });
+    if ((xiRolePlayers ?? []).length !== xi.length) {
+      return NextResponse.json({ error: "One or more players in XI not found" }, { status: 400 });
+    }
     const roleMap = new Map((xiRolePlayers ?? []).map((p) => [p.id, p.role as string]));
     const composition = validateXiComposition(xi, roleMap);
     if (!composition.valid) {
