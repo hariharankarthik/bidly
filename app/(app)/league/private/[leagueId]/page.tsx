@@ -9,6 +9,10 @@ import { getSportConfig } from "@/lib/sports";
 import type { LeagueTeamDisplay } from "@/lib/sports/types";
 import { PlayerMeta } from "@/components/player/PlayerMeta";
 import { ClaimTeamButton } from "@/components/private-league/ClaimTeamButton";
+import { InviteShareButtons } from "@/components/private-league/InviteShareButtons";
+import { StartLeagueButton } from "@/components/private-league/StartLeagueButton";
+import { UnclaimTeamButton } from "@/components/private-league/UnclaimTeamButton";
+import { ReadOnlyLineup } from "@/components/private-league/ReadOnlyLineup";
 import { PrivateLineupPanel, type PrivateTeamPlayer } from "@/components/private-league/PrivateLineupPanel";
 
 export default async function PrivateLeaguePage({ params }: { params: Promise<{ leagueId: string }> }) {
@@ -20,7 +24,7 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
 
   const { data: league, error } = await supabase
     .from("fantasy_leagues")
-    .select("id, name, host_id, league_kind, invite_code, sport_id")
+    .select("id, name, host_id, league_kind, invite_code, sport_id, status")
     .eq("id", leagueId)
     .single();
 
@@ -69,19 +73,30 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
       <PageHeader
         title={league.name}
         subtitle={
-          <>
+          <span className="inline-flex flex-wrap items-center gap-1">
             Private league · invite code <span className="aa-invite-code text-violet-300">{league.invite_code}</span>
-          </>
+            <InviteShareButtons inviteCode={league.invite_code} />
+          </span>
         }
         meta={
-          teams.length ? (
-            <span>
-              <span className="text-neutral-400">{claimedCount}</span>/{teams.length} claimed
-            </span>
-          ) : null
+          <span className="inline-flex flex-wrap items-center gap-2">
+            {league.status === "draft" ? (
+              <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-300 ring-1 ring-amber-500/25">Draft</span>
+            ) : league.status === "active" ? (
+              <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-semibold text-green-300 ring-1 ring-green-500/25">Active</span>
+            ) : league.status === "completed" ? (
+              <span className="rounded-full bg-neutral-500/10 px-2 py-0.5 text-xs font-semibold text-neutral-300 ring-1 ring-neutral-500/25">Completed</span>
+            ) : null}
+            {teams.length ? (
+              <span>
+                <span className="text-neutral-400">{claimedCount}</span>/{teams.length} claimed
+              </span>
+            ) : null}
+          </span>
         }
         actions={
           <>
+            {isHost && league.status === "draft" ? <StartLeagueButton leagueId={leagueId} /> : null}
             {isHost ? (
               <Button asChild variant="secondary" className="border-violet-500/30 text-white">
                 <Link href={`/league/private/${leagueId}/import`}>Import rosters</Link>
@@ -170,6 +185,7 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
                     </div>
                     <div className="flex items-center gap-2">
                       {isMine ? <span className="text-xs font-semibold text-blue-200">Your team</span> : null}
+                      {isMine && league.status === "draft" ? <UnclaimTeamButton leagueId={leagueId} teamId={t.id} /> : null}
                       {canClaim ? <ClaimTeamButton leagueId={leagueId} teamId={t.id} /> : null}
                       <span className="text-xs text-neutral-500 group-open:text-neutral-300">Toggle</span>
                     </div>
@@ -209,7 +225,7 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
                     ) : null}
                   </div>
 
-                  {isMine ? (
+                  {isMine && league.status === "active" ? (
                     <PrivateLineupPanel
                       privateTeamId={t.id}
                       players={squad.map(
@@ -228,6 +244,22 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
                       captainPlayerId={t.captain_player_id as string | null}
                       viceCaptainPlayerId={t.vice_captain_player_id as string | null}
                     />
+                  ) : isMine && league.status === "draft" ? (
+                    <p className="mt-4 text-sm text-neutral-400">Set your Playing XI once the host starts the league.</p>
+                  ) : isMine && league.status === "completed" ? (
+                    <p className="mt-4 text-sm text-neutral-400">League has ended.</p>
+                  ) : null}
+
+                  {!isMine && Array.isArray(t.starting_xi_player_ids) && (t.starting_xi_player_ids as string[]).length > 0 ? (
+                    <ReadOnlyLineup
+                      players={(t.starting_xi_player_ids as string[])
+                        .map((id) => playersById.get(id))
+                        .filter(Boolean)
+                        .map((p) => ({ name: p!.name, role: p!.role, nationality: p!.nationality, isOverseas: p!.is_overseas }))}
+                      captainName={cId ? (playersById.get(cId)?.name ?? null) : null}
+                      viceCaptainName={vcId ? (playersById.get(vcId)?.name ?? null) : null}
+                      xiSize={xiSize}
+                    />
                   ) : null}
                 </details>
               );
@@ -235,7 +267,7 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
           </div>
         </section>
       ) : null}
-      <LeagueClient leagueId={league.id} isHost={isHost} teams={teams} ownersByTeamId={ownersByTeamId} />
+      <LeagueClient leagueId={league.id} isHost={isHost} teams={teams} ownersByTeamId={ownersByTeamId} leagueStatus={league.status} myTeamId={myClaimedTeamId ?? undefined} />
     </div>
   );
 }
