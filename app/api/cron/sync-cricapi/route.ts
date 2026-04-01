@@ -21,6 +21,7 @@ type ActiveLeagueRow = {
   room_id: string | null;
   sport_id: string;
   league_kind: string;
+  started_at: string | null;
 };
 
 type PendingSyncRow = {
@@ -467,7 +468,7 @@ export async function GET(req: NextRequest) {
 
   const { data: leagues, error: lErr } = await supabaseAdmin
     .from("fantasy_leagues")
-    .select("id, room_id, sport_id, league_kind")
+    .select("id, room_id, sport_id, league_kind, started_at")
     .eq("status", "active");
   if (lErr) {
     return NextResponse.json({ error: lErr.message }, { status: 500 });
@@ -645,7 +646,7 @@ export async function GET(req: NextRequest) {
 
       const pteamsRes = await supabaseAdmin
         .from("private_league_teams")
-        .select("id, squad_player_ids, starting_xi_player_ids, captain_player_id, vice_captain_player_id")
+        .select("id, squad_player_ids, starting_xi_player_ids, captain_player_id, vice_captain_player_id, claimed_by, xi_confirmed_at")
         .eq("league_id", league.id);
       const pteams = (pteamsRes.data ?? []) as Array<{
         id: string;
@@ -653,8 +654,22 @@ export async function GET(req: NextRequest) {
         starting_xi_player_ids: string[] | null;
         captain_player_id: string | null;
         vice_captain_player_id: string | null;
+        claimed_by: string | null;
+        xi_confirmed_at: string | null;
       }>;
       if (pteams.length === 0) continue;
+
+      // For leagues that went through draft → active (have started_at),
+      // gate scoring until every claimed team has confirmed their XI at least once.
+      if (league.started_at) {
+        const claimedWithoutXi = pteams.filter((t) => t.claimed_by && !t.xi_confirmed_at);
+        if (claimedWithoutXi.length > 0) {
+          console.log(
+            `[private-scoring] Skipping league ${league.id}: ${claimedWithoutXi.length} claimed team(s) have never set XI`,
+          );
+          continue;
+        }
+      }
 
       const pTeamList: TeamLineupRow[] = pteams.map((t) => ({
         id: t.id,

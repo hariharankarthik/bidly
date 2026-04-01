@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
   const { error: uErr } = await supabase
     .from("fantasy_leagues")
-    .update({ status: "active" })
+    .update({ status: "active", started_at: new Date().toISOString() })
     .eq("id", league_id)
     .eq("status", "draft");
   if (uErr) return NextResponse.json({ error: uErr.message }, { status: 500 });

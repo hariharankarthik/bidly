@@ -126,3 +126,64 @@ describe("private league scoring", () => {
     });
   });
 });
+
+describe("cron XI completeness gate", () => {
+  type TeamRow = {
+    id: string;
+    claimed_by: string | null;
+    xi_confirmed_at: string | null;
+    starting_xi_player_ids: string[];
+  };
+
+  function shouldScore(league: { started_at: string | null }, teams: TeamRow[]): boolean {
+    if (league.started_at) {
+      const claimedWithoutXi = teams.filter((t) => t.claimed_by && !t.xi_confirmed_at);
+      if (claimedWithoutXi.length > 0) return false;
+    }
+    return true;
+  }
+
+  it("skips scoring when a claimed team has never set XI (new league)", () => {
+    const league = { started_at: "2025-04-01T00:00:00Z" };
+    const teams: TeamRow[] = [
+      { id: "t1", claimed_by: "u1", xi_confirmed_at: "2025-04-01T01:00:00Z", starting_xi_player_ids: ["p1"] },
+      { id: "t2", claimed_by: "u2", xi_confirmed_at: null, starting_xi_player_ids: [] },
+    ];
+    expect(shouldScore(league, teams)).toBe(false);
+  });
+
+  it("proceeds when all claimed teams have confirmed XI", () => {
+    const league = { started_at: "2025-04-01T00:00:00Z" };
+    const teams: TeamRow[] = [
+      { id: "t1", claimed_by: "u1", xi_confirmed_at: "2025-04-01T01:00:00Z", starting_xi_player_ids: ["p1"] },
+      { id: "t2", claimed_by: "u2", xi_confirmed_at: "2025-04-01T02:00:00Z", starting_xi_player_ids: ["p2"] },
+    ];
+    expect(shouldScore(league, teams)).toBe(true);
+  });
+
+  it("unclaimed teams do not block scoring", () => {
+    const league = { started_at: "2025-04-01T00:00:00Z" };
+    const teams: TeamRow[] = [
+      { id: "t1", claimed_by: "u1", xi_confirmed_at: "2025-04-01T01:00:00Z", starting_xi_player_ids: ["p1"] },
+      { id: "t2", claimed_by: null, xi_confirmed_at: null, starting_xi_player_ids: [] },
+    ];
+    expect(shouldScore(league, teams)).toBe(true);
+  });
+
+  it("team that changed XI still has xi_confirmed_at — not blocked", () => {
+    const league = { started_at: "2025-04-01T00:00:00Z" };
+    const teams: TeamRow[] = [
+      { id: "t1", claimed_by: "u1", xi_confirmed_at: "2025-04-01T01:00:00Z", starting_xi_player_ids: ["p3", "p4"] },
+    ];
+    expect(shouldScore(league, teams)).toBe(true);
+  });
+
+  it("legacy leagues (no started_at) use backward-compat scoring", () => {
+    const league = { started_at: null };
+    const teams: TeamRow[] = [
+      { id: "t1", claimed_by: "u1", xi_confirmed_at: null, starting_xi_player_ids: [] },
+      { id: "t2", claimed_by: "u2", xi_confirmed_at: null, starting_xi_player_ids: [] },
+    ];
+    expect(shouldScore(league, teams)).toBe(true);
+  });
+});

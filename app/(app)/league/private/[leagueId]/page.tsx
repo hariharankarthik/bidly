@@ -37,7 +37,7 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
 
   const { data: privateTeams } = await supabase
     .from("private_league_teams")
-    .select("id, team_name, team_color, squad_player_ids, starting_xi_player_ids, captain_player_id, vice_captain_player_id, claimed_by")
+    .select("id, team_name, team_color, squad_player_ids, starting_xi_player_ids, captain_player_id, vice_captain_player_id, claimed_by, xi_confirmed_at")
     .eq("league_id", leagueId);
 
   const claimedByIds = [...new Set((privateTeams ?? []).map((t) => (t.claimed_by as string | null)).filter(Boolean))] as string[];
@@ -62,6 +62,9 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
       .filter(([, v]) => Boolean(v)),
   ) as Record<string, string>;
   const claimedCount = (privateTeams ?? []).filter((t) => Boolean(t.claimed_by)).length;
+  const claimedTeams = (privateTeams ?? []).filter((t) => Boolean(t.claimed_by));
+  const xiReadyCount = claimedTeams.filter((t) => Boolean(t.xi_confirmed_at)).length;
+  const allXiReady = claimedTeams.length > 0 && xiReadyCount === claimedTeams.length;
 
   const playerIds = [...new Set((privateTeams ?? []).flatMap((t) => (t.squad_player_ids as string[]) ?? []))];
   const { data: playerRows } = playerIds.length
@@ -91,6 +94,11 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
             {teams.length ? (
               <span>
                 <span className="text-neutral-400">{claimedCount}</span>/{teams.length} claimed
+              </span>
+            ) : null}
+            {league.status === "active" && claimedTeams.length > 0 ? (
+              <span>
+                <span className={allXiReady ? "text-green-400" : "text-amber-400"}>{xiReadyCount}</span>/{claimedTeams.length} XI set
               </span>
             ) : null}
           </span>
@@ -139,6 +147,16 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
               </p>
             </div>
           ) : null}
+          {league.status === "active" && !allXiReady ? (
+            <div className="rounded-xl border border-amber-500/25 bg-amber-950/20 px-4 py-3 text-sm text-amber-100/90">
+              ⏳ Scoring begins once all teams set their Playing XI ({xiReadyCount}/{claimedTeams.length} ready)
+            </div>
+          ) : null}
+          {league.status === "active" && allXiReady ? (
+            <div className="rounded-xl border border-green-500/25 bg-green-950/20 px-4 py-3 text-sm text-green-100/90">
+              ✅ All teams ready — scoring active
+            </div>
+          ) : null}
           <div className="grid gap-3">
             {privateTeams.map((t) => {
               const squad = ((t.squad_player_ids as string[]) ?? [])
@@ -148,6 +166,7 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
               const cId = t.captain_player_id as string | null;
               const vcId = t.vice_captain_player_id as string | null;
               const claimedBy = (t.claimed_by as string | null) ?? null;
+              const xiConfirmed = Boolean(t.xi_confirmed_at);
               const isMine = Boolean(user?.id && claimedBy === user.id);
               const canClaim = Boolean(user?.id) && !claimedBy && !myClaimedTeamId;
 
@@ -182,6 +201,13 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
                             </>
                           )}
                         </p>
+                        {league.status === "active" && claimedBy ? (
+                          xiConfirmed ? (
+                            <p className="text-xs text-green-400">XI set ✓</p>
+                          ) : (
+                            <p className="text-xs text-amber-400">XI not set</p>
+                          )
+                        ) : null}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">

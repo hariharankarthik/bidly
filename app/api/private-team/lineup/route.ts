@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getSportConfig } from "@/lib/sports";
+import { isLineupChangeWindowOpen, getWindowStatus } from "@/lib/lineup-lock";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   const { data: team, error: tErr } = await supabase
     .from("private_league_teams")
-    .select("id, league_id, claimed_by, squad_player_ids")
+    .select("id, league_id, claimed_by, squad_player_ids, xi_confirmed_at")
     .eq("id", private_team_id)
     .single();
   if (tErr || !team) return NextResponse.json({ error: "Team not found" }, { status: 404 });
@@ -51,6 +52,15 @@ export async function POST(req: NextRequest) {
   const isHost = league.host_id === user.id;
   const isOwner = team.claimed_by === user.id;
   if (!isHost && !isOwner) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  // Time window gate: 3 PM – 6 AM Pacific (checked after auth to avoid info disclosure)
+  if (!isLineupChangeWindowOpen()) {
+    const { opensAt } = getWindowStatus();
+    return NextResponse.json(
+      { error: "Lineup changes are only allowed between 3 PM – 6 AM Pacific Time", opens_at: opensAt.toISOString() },
+      { status: 403 },
+    );
+  }
 
   const squad = new Set((Array.isArray(team.squad_player_ids) ? team.squad_player_ids : []).filter(Boolean) as string[]);
 
@@ -95,19 +105,29 @@ export async function POST(req: NextRequest) {
     if (vice_captain_player_id && !xi.includes(vice_captain_player_id)) {
       return NextResponse.json({ error: "Vice-captain must be in starting XI" }, { status: 400 });
     }
+    if (!captain_player_id || !vice_captain_player_id) {
+      return NextResponse.json({ error: "Captain and Vice-Captain are required to save your Playing XI" }, { status: 400 });
+    }
   }
 
   if (captain_player_id && vice_captain_player_id && captain_player_id === vice_captain_player_id) {
     return NextResponse.json({ error: "Captain and vice-captain must be different players" }, { status: 400 });
   }
 
+  const updatePayload: Record<string, unknown> = {
+    starting_xi_player_ids: xi,
+    captain_player_id: captain_player_id ?? null,
+    vice_captain_player_id: vice_captain_player_id ?? null,
+  };
+
+  // Mark first-ever XI confirmation (never cleared, used for scoring gate)
+  if (xi.length > 0 && !team.xi_confirmed_at) {
+    updatePayload.xi_confirmed_at = new Date().toISOString();
+  }
+
   const { error: uErr } = await supabase
     .from("private_league_teams")
-    .update({
-      starting_xi_player_ids: xi,
-      captain_player_id: captain_player_id ?? null,
-      vice_captain_player_id: vice_captain_player_id ?? null,
-    })
+    .update(updatePayload)
     .eq("id", private_team_id);
   if (uErr) return NextResponse.json({ error: uErr.message }, { status: 500 });
 
