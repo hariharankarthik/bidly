@@ -9,12 +9,15 @@ export type SheetColumnMapping = {
   team?: string;
   /** Optional: captain / vice — values like C, VC, CAPT, VICE, * … */
   cvc?: string;
+  /** Optional: purchase price / amount spent for offline draft */
+  price?: string;
 };
 
 export type NormalizedSheetRow = {
   teamName: string;
   playerName: string;
   cvcRaw: string;
+  priceRaw: string;
 };
 
 function normalizeCvc(raw: string): "c" | "vc" | "" {
@@ -23,6 +26,20 @@ function normalizeCvc(raw: string): "c" | "vc" | "" {
   if (s === "c" || s === "capt" || s === "captain" || s === "(c)" || s === "*") return "c";
   if (s === "vc" || s === "vice" || s === "vice-captain" || s === "vic" || s === "(vc)") return "vc";
   return "";
+}
+
+function parseMoneyToLakhs(raw: string): number | null {
+  const s0 = String(raw ?? "").trim();
+  if (!s0) return null;
+  const s = s0.replace(/[,₹$]/g, "").trim();
+  // Accept plain numbers (treated as lakhs) and "Cr"/"L" suffixes.
+  const m = s.match(/^(\d+(?:\.\d+)?)\s*(cr|l)?$/i);
+  if (!m) return null;
+  const n = Number(m[1]);
+  if (!Number.isFinite(n) || n < 0) return null;
+  const unit = (m[2] ?? "").toLowerCase();
+  const lakhs = unit === "cr" ? n * 100 : n;
+  return Math.round(lakhs);
 }
 
 /**
@@ -53,6 +70,11 @@ export function sheetTextToNormalizedRows(text: string, mapping: SheetColumnMapp
     ci = findCol(mapping.cvc.trim());
   }
 
+  let pri = -1;
+  if (mapping.price?.trim()) {
+    pri = findCol(mapping.price.trim());
+  }
+
   const defaultTeam = mapping.team?.trim() && ti < 0 ? mapping.team.trim() : "Team 1";
 
   const out: NormalizedSheetRow[] = [];
@@ -62,7 +84,8 @@ export function sheetTextToNormalizedRows(text: string, mapping: SheetColumnMapp
     if (!playerName) continue;
     const teamName = ti >= 0 ? (row[ti] ?? "").trim() || defaultTeam : defaultTeam;
     const cvcRaw = ci >= 0 ? (row[ci] ?? "").trim() : "";
-    out.push({ teamName, playerName, cvcRaw });
+    const priceRaw = pri >= 0 ? (row[pri] ?? "").trim() : "";
+    out.push({ teamName, playerName, cvcRaw, priceRaw });
   }
   return out;
 }
@@ -72,6 +95,8 @@ export type BuiltPrivateTeam = {
   squad_player_ids: string[];
   captain_player_id: string | null;
   vice_captain_player_id: string | null;
+  /** player_id -> purchase price (numeric) */
+  squad_player_prices: Record<string, number>;
 };
 
 /**
@@ -112,6 +137,7 @@ export function buildPrivateTeamsFromRows(
     const idSet = new Set<string>();
     let captain: string | null = null;
     let vice: string | null = null;
+    const prices: Record<string, number> = {};
 
     for (const tr of teamRows) {
       const p = matchDbPlayerForSheetName(dbPlayers, tr.playerName);
@@ -137,6 +163,12 @@ export function buildPrivateTeamsFromRows(
         if (vice && vice !== p.id) duplicate_player_warnings.push(`Multiple vice-captains for ${teamName} — using last`);
         vice = p.id;
       }
+
+      const rawPrice = tr.priceRaw?.trim() ?? "";
+      if (rawPrice) {
+        const lakhs = parseMoneyToLakhs(rawPrice);
+        if (lakhs != null) prices[p.id] = lakhs;
+      }
     }
 
     teams.push({
@@ -144,6 +176,7 @@ export function buildPrivateTeamsFromRows(
       squad_player_ids: [...idSet],
       captain_player_id: captain,
       vice_captain_player_id: vice,
+      squad_player_prices: prices,
     });
   }
 

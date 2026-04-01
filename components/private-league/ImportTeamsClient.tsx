@@ -19,7 +19,7 @@ export function ImportTeamsClient({ leagueId }: { leagueId: string }) {
   const [text, setText] = useState("");
   const [playerCol, setPlayerCol] = useState("");
   const [teamCol, setTeamCol] = useState("");
-  const [cvcCol, setCvcCol] = useState("");
+  const [priceCol, setPriceCol] = useState("");
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
 
@@ -33,8 +33,16 @@ export function ImportTeamsClient({ leagueId }: { leagueId: string }) {
   }, [text]);
 
   async function runPreview() {
+    if (!teamCol) {
+      toast.error("Pick the team column");
+      return;
+    }
     if (!playerCol) {
       toast.error("Pick the player name column");
+      return;
+    }
+    if (!priceCol) {
+      toast.error("Pick the price column");
       return;
     }
     setBusy(true);
@@ -49,7 +57,7 @@ export function ImportTeamsClient({ leagueId }: { leagueId: string }) {
           mapping: {
             player_name: playerCol,
             ...(teamCol.trim() ? { team: teamCol.trim() } : {}),
-            ...(cvcCol.trim() ? { cvc: cvcCol.trim() } : {}),
+            ...(priceCol.trim() ? { price: priceCol.trim() } : {}),
           },
         }),
       });
@@ -76,8 +84,16 @@ export function ImportTeamsClient({ leagueId }: { leagueId: string }) {
   }
 
   async function runImport() {
+    if (!teamCol) {
+      toast.error("Pick the team column");
+      return;
+    }
     if (!playerCol) {
       toast.error("Pick the player name column");
+      return;
+    }
+    if (!priceCol) {
+      toast.error("Pick the price column");
       return;
     }
     setBusy(true);
@@ -91,7 +107,7 @@ export function ImportTeamsClient({ leagueId }: { leagueId: string }) {
           mapping: {
             player_name: playerCol,
             ...(teamCol.trim() ? { team: teamCol.trim() } : {}),
-            ...(cvcCol.trim() ? { cvc: cvcCol.trim() } : {}),
+            ...(priceCol.trim() ? { price: priceCol.trim() } : {}),
           },
         }),
       });
@@ -125,19 +141,33 @@ export function ImportTeamsClient({ leagueId }: { leagueId: string }) {
             setPreview(null);
           }}
           rows={12}
-          placeholder={'e.g.\nTeam,Player,CVC\nSuper Kings,Ruturaj Gaikwad,C\nSuper Kings,Ravindra Jadeja,'}
+          placeholder={'e.g.\nTeam,Player,Price\nMumbai Indians,Rohit Sharma,10.00 Cr\nMumbai Indians,R. Sai Kishore,50 L'}
           className="w-full resize-y rounded-lg border border-white/10 bg-neutral-950/70 px-3 py-2 font-mono text-sm text-neutral-200 placeholder:text-neutral-600 focus:border-violet-500/50 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
         />
         <p className="text-xs text-neutral-500">
-          Excel: Save As CSV. Sheets: copy range (tabs work). Optional columns: team name, captain marker (C / VC).
-          Player names should be full names (e.g. &ldquo;Rohit Sharma&rdquo;) to avoid ambiguity.
+          Excel: Save As CSV. Sheets: copy range (tabs work). Player names should be full names (e.g. &ldquo;Rohit Sharma&rdquo;) to avoid ambiguity.
         </p>
       </div>
 
       {headers.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-1">
-            <Label>Player name column</Label>
+            <Label>Team column</Label>
+            <select
+              value={teamCol}
+              onChange={(e) => setTeamCol(e.target.value)}
+              className="w-full rounded-lg border border-white/10 bg-neutral-950/70 px-2 py-2 text-sm"
+            >
+              <option value="">Select…</option>
+              {headers.map((h) => (
+                <option key={h} value={h}>
+                  {h}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label>Player column</Label>
             <select
               value={playerCol}
               onChange={(e) => setPlayerCol(e.target.value)}
@@ -152,28 +182,13 @@ export function ImportTeamsClient({ leagueId }: { leagueId: string }) {
             </select>
           </div>
           <div className="space-y-1">
-            <Label>Team column (optional)</Label>
+            <Label>Price column</Label>
             <select
-              value={teamCol}
-              onChange={(e) => setTeamCol(e.target.value)}
+              value={priceCol}
+              onChange={(e) => setPriceCol(e.target.value)}
               className="w-full rounded-lg border border-white/10 bg-neutral-950/70 px-2 py-2 text-sm"
             >
-              <option value="">Single team / omit</option>
-              {headers.map((h) => (
-                <option key={h} value={h}>
-                  {h}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-1">
-            <Label>Captain / VC column (optional)</Label>
-            <select
-              value={cvcCol}
-              onChange={(e) => setCvcCol(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-neutral-950/70 px-2 py-2 text-sm"
-            >
-              <option value="">None</option>
+              <option value="">Select…</option>
               {headers.map((h) => (
                 <option key={h} value={h}>
                   {h}
@@ -185,12 +200,17 @@ export function ImportTeamsClient({ leagueId }: { leagueId: string }) {
       ) : null}
 
       <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="secondary" disabled={busy || !text.trim() || !playerCol} onClick={() => void runPreview()}>
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={busy || !text.trim() || !teamCol || !playerCol || !priceCol}
+          onClick={() => void runPreview()}
+        >
           Preview match
         </Button>
         <Button
           type="button"
-          disabled={busy || !text.trim() || !playerCol}
+          disabled={busy || !text.trim() || !teamCol || !playerCol || !priceCol}
           onClick={() => void runImport()}
           className="bg-gradient-to-r from-blue-600 to-blue-500 text-white"
         >
