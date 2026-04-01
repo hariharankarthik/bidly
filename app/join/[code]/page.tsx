@@ -1,13 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { loginUrlWithNext } from "@/lib/safe-path";
+import { normalizeInviteCode, resolveJoinTarget } from "@/lib/join/resolve-invite-code";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { redirect } from "next/navigation";
 
 export default async function JoinPage({ params }: { params: Promise<{ code: string }> }) {
   const { code: raw } = await params;
-  const codeRaw = (raw ?? "").trim();
-  const code = codeRaw.toUpperCase();
+  const { code, codeRaw } = normalizeInviteCode(raw ?? "");
 
   const supabase = await createClient();
   const {
@@ -15,37 +15,27 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
   } = await supabase.auth.getUser();
 
   if (!user) {
-    // Preserve the join target through OAuth.
-    return (
-      <main className="mx-auto flex min-h-[70vh] max-w-xl flex-col items-center justify-center gap-4 px-6 text-center">
-        <h1 className="aa-display text-2xl font-semibold text-white">Sign in to join</h1>
-        <p className="text-sm text-neutral-500">We’ll send you right back after login.</p>
-        <Button asChild size="lg" className="h-11">
-          <Link href={loginUrlWithNext(`/join/${encodeURIComponent(code)}`)}>Continue</Link>
-        </Button>
-      </main>
-    );
+    redirect(loginUrlWithNext(`/join/${encodeURIComponent(code)}`));
   }
 
-  // Auction room invite?
   const { data: room } = await supabase
     .from("auction_rooms")
     .select("id")
     .in("invite_code", [code, codeRaw])
     .maybeSingle();
-  if (room?.id) {
-    redirect(`/room/${room.id}/lobby`);
-  }
 
-  // Private league invite?
-  const { data: league } = await supabase
-    .from("fantasy_leagues")
-    .select("id, league_kind")
-    .in("invite_code", [code, codeRaw])
-    .maybeSingle();
-  if (league?.id) {
-    const dest = league.league_kind === "private" ? `/league/private/${league.id}` : `/league/${league.id}`;
-    redirect(dest);
+  const { data: league } = room?.id
+    ? { data: null }
+    : await supabase
+        .from("fantasy_leagues")
+        .select("id, league_kind")
+        .in("invite_code", [code, codeRaw])
+        .maybeSingle();
+
+  const target = resolveJoinTarget(room, league);
+
+  if (target.kind !== "not-found") {
+    redirect(target.url);
   }
 
   return (
