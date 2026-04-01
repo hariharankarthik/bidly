@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PlayerMeta } from "@/components/player/PlayerMeta";
-import { isLineupChangeWindowOpen, getWindowStatus } from "@/lib/lineup-lock";
 
 export type PrivateTeamPlayer = {
   playerId: string;
@@ -35,18 +34,6 @@ export function PrivateLineupPanel({
   const [c, setC] = useState<string | null>(captainPlayerId);
   const [vc, setVc] = useState<string | null>(viceCaptainPlayerId);
   const [saving, setSaving] = useState(false);
-  const [windowOpen, setWindowOpen] = useState(() => isLineupChangeWindowOpen());
-  const [windowStatus, setWindowStatus] = useState(() => getWindowStatus());
-
-  // Refresh time-window status every 30 seconds
-  useEffect(() => {
-    const tick = () => {
-      setWindowOpen(isLineupChangeWindowOpen());
-      setWindowStatus(getWindowStatus());
-    };
-    const id = setInterval(tick, 30_000);
-    return () => clearInterval(id);
-  }, []);
 
   useEffect(() => {
     const squadSize = players.length;
@@ -70,7 +57,7 @@ export function PrivateLineupPanel({
 
   const hasCaptainAndVc = Boolean(c) && Boolean(vc);
   const xiComplete = xi.size === xiSize;
-  const canSave = canSetFullXi && xiComplete && hasCaptainAndVc && windowOpen;
+  const canSave = canSetFullXi && xiComplete && hasCaptainAndVc;
 
   function toggle(pid: string) {
     setXi((prev) => {
@@ -172,28 +159,12 @@ export function PrivateLineupPanel({
         </div>
       </div>
 
-      {!windowOpen ? (
-        <div className="border-b border-amber-500/20 bg-amber-950/20 px-4 py-3 text-sm text-amber-200">
-          🔒 Lineup changes locked until{" "}
-          <span className="font-semibold">
-            {windowStatus.opensAt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles", timeZoneName: "short" })}
-          </span>
-        </div>
-      ) : (
-        <div className="border-b border-green-500/15 bg-green-950/10 px-4 py-2 text-xs text-green-300/80">
-          Changes open until{" "}
-          <span className="font-medium">
-            {windowStatus.closesAt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles", timeZoneName: "short" })}
-          </span>
-        </div>
-      )}
-
       <ul className="max-h-72 space-y-2 overflow-y-auto p-4">
         {players.map((p) => {
           const on = xi.has(p.playerId);
           const isC = c === p.playerId;
           const isVC = vc === p.playerId;
-          const disablePick = (!canSetFullXi && !on) || !windowOpen;
+          const disablePick = !canSetFullXi && !on;
           return (
             <li
               key={p.playerId}
@@ -219,8 +190,7 @@ export function PrivateLineupPanel({
                   <button
                     type="button"
                     onClick={() => setCaptain(p.playerId)}
-                    disabled={!windowOpen}
-                    className={`cursor-pointer rounded-full px-2 py-1 font-semibold ring-1 transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                    className={`cursor-pointer rounded-full px-2 py-1 font-semibold ring-1 transition-colors ${
                       isC ? "bg-blue-500/15 text-blue-200 ring-blue-500/30" : "bg-neutral-900/40 text-neutral-400 ring-neutral-700/80 hover:text-neutral-200"
                     }`}
                   >
@@ -229,8 +199,7 @@ export function PrivateLineupPanel({
                   <button
                     type="button"
                     onClick={() => setViceCaptain(p.playerId)}
-                    disabled={!windowOpen}
-                    className={`cursor-pointer rounded-full px-2 py-1 font-semibold ring-1 transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                    className={`cursor-pointer rounded-full px-2 py-1 font-semibold ring-1 transition-colors ${
                       isVC ? "bg-sky-500/15 text-sky-200 ring-sky-500/30" : "bg-neutral-900/40 text-neutral-400 ring-neutral-700/80 hover:text-neutral-200"
                     }`}
                   >
