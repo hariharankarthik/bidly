@@ -89,11 +89,15 @@ export async function POST(req: NextRequest) {
   }
 
   const isPrivate = league.league_kind === "private";
+  const xiSize = getSportConfig(league.sport_id)?.lineup?.xiSize ?? 11;
 
   let teamList: TeamLineupRow[] = [];
   const playerToTeam = new Map<string, string>();
   /** `auction` → auction_teams.id; `private` → private_league_teams.id */
   let scoreKind: "auction" | "private" = "auction";
+  const squadByTeamId = new Map<string, string[]>();
+  const autoXiByTeamId = new Map<string, string[]>();
+  const priceByPlayerId = new Map<string, number>();
 
   if (isPrivate) {
     scoreKind = "private";
@@ -109,9 +113,40 @@ export async function POST(req: NextRequest) {
       vice_captain_player_id: t.vice_captain_player_id ?? null,
     }));
     for (const t of pteams ?? []) {
+      const squad = (t.squad_player_ids ?? []) as string[];
+      squadByTeamId.set(t.id as string, squad);
       for (const pid of t.squad_player_ids ?? []) {
         playerToTeam.set(pid, t.id);
       }
+    }
+
+    // If a team hasn't set a Playing XI, default to their 11 most expensive squad players.
+    const allSquadPlayerIds = [...new Set((pteams ?? []).flatMap((t) => (t.squad_player_ids ?? []) as string[]))];
+    if (allSquadPlayerIds.length) {
+      const { data: priceRows, error: prErr } = await supabase
+        .from("players")
+        .select("id, base_price")
+        .in("id", allSquadPlayerIds);
+      if (prErr) return NextResponse.json({ error: prErr.message }, { status: 500 });
+      for (const r of (priceRows ?? []) as Array<{ id: string; base_price: number }>) {
+        priceByPlayerId.set(r.id, Number(r.base_price ?? 0));
+      }
+    }
+
+    for (const t of teamList) {
+      const xi = t.starting_xi_player_ids ?? [];
+      if (xi.length > 0) continue;
+      const squad = squadByTeamId.get(t.id) ?? [];
+      const sorted = squad
+        .slice()
+        .sort((a, b) => {
+          const pa = priceByPlayerId.get(a) ?? 0;
+          const pb = priceByPlayerId.get(b) ?? 0;
+          if (pb !== pa) return pb - pa;
+          return String(a).localeCompare(String(b));
+        });
+      const autoXi = sorted.slice(0, xiSize);
+      autoXiByTeamId.set(t.id, autoXi);
     }
   } else {
     if (!league.room_id) {
@@ -228,6 +263,18 @@ export async function POST(req: NextRequest) {
     const lineupByTeam = new Map<string, TeamLineupRow>();
     for (const t of teamList) lineupByTeam.set(t.id, t);
 
+    const pickTopByPrice = (playerIds: string[], k: number): string[] => {
+      return playerIds
+        .slice()
+        .sort((a, b) => {
+          const pa = priceByPlayerId.get(a) ?? 0;
+          const pb = priceByPlayerId.get(b) ?? 0;
+          if (pb !== pa) return pb - pa;
+          return String(a).localeCompare(String(b));
+        })
+        .slice(0, k);
+    };
+
     const agg = new Map<string, { total: number; breakdown: Record<string, number>; detail: object[] }>();
     for (const t of teamList) {
       agg.set(t.id, { total: 0, breakdown: {}, detail: [] });
@@ -248,11 +295,18 @@ export async function POST(req: NextRequest) {
 
       const { total: baseTotal } = scorePlayerMatch(stats);
       const teamRow = lineupByTeam.get(teamId);
-      const xi = teamRow?.starting_xi_player_ids ?? [];
+      const rawXi = teamRow?.starting_xi_player_ids ?? [];
+      const isAutoXi = isPrivate && rawXi.length === 0 && (autoXiByTeamId.get(teamId)?.length ?? 0) > 0;
+      const xi = isAutoXi ? (autoXiByTeamId.get(teamId) ?? []) : rawXi;
+      const picked = isPrivate ? pickTopByPrice(xi, 2) : [];
+      const captainPlayerId =
+        (teamRow?.captain_player_id ?? null) ?? (isPrivate ? (picked[0] ?? null) : null);
+      const viceCaptainPlayerId =
+        (teamRow?.vice_captain_player_id ?? null) ?? (isPrivate ? (picked[1] ?? null) : null);
       const { effective, counted, multiplier } = effectivePointsWithLineup(baseTotal, row.player_id, {
         startingXiPlayerIds: xi.filter(Boolean),
-        captainPlayerId: teamRow?.captain_player_id ?? null,
-        viceCaptainPlayerId: teamRow?.vice_captain_player_id ?? null,
+        captainPlayerId,
+        viceCaptainPlayerId,
       });
 
       if (!counted) continue;
@@ -265,6 +319,7 @@ export async function POST(req: NextRequest) {
         base_points: baseTotal,
         multiplier,
         effective_points: effective,
+        ...(isAutoXi ? { auto_xi: true } : {}),
       });
       applied++;
     }
@@ -282,7 +337,7 @@ export async function POST(req: NextRequest) {
               total_points: Math.round(b.total * 100) / 100,
               breakdown: {
                 ...b.breakdown,
-                source: cricapiUsed ? "cricapi_v1" : "engine_v1",
+                source: cricapiUsed ? "cricapi_v1" : "engine_v2_auto_xi_price",
                 performances_applied: applied,
                 player_lines: b.detail.slice(0, 40),
                 league_kind: "private",
@@ -301,7 +356,7 @@ export async function POST(req: NextRequest) {
               total_points: Math.round(b.total * 100) / 100,
               breakdown: {
                 ...b.breakdown,
-                source: cricapiUsed ? "cricapi_v1" : "engine_v1",
+                source: cricapiUsed ? "cricapi_v1" : "engine_v2_auto_xi_price",
                 performances_applied: applied,
                 player_lines: b.detail.slice(0, 40),
                 ...(unmatchedNames?.length ? { cricapi_unmatched_names: unmatchedNames } : {}),
