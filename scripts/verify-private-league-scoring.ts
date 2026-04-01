@@ -16,6 +16,7 @@ import { mapCricApiExtractedToPerformances } from "../lib/cricapi/map-player-nam
 import { scorePlayerMatch, type PlayerMatchStats } from "../lib/fantasy-scoring";
 import { effectivePointsWithLineup } from "../lib/fantasy-scoring/lineup-multipliers";
 import { parseCricApiMatchUuid } from "../lib/cricapi/match-id";
+import { getSportConfig } from "../lib/sports";
 
 function loadEnvLocal() {
   const p = resolve(process.cwd(), ".env.local");
@@ -103,11 +104,52 @@ async function main() {
     vice_captain_player_id: (t.vice_captain_player_id as string | null) ?? null,
   }));
 
+  const xiSize = getSportConfig(league.sport_id)?.lineup?.xiSize ?? 11;
+
   const playerToTeam = new Map<string, string>();
+  const squadByTeamId = new Map<string, string[]>();
   for (const t of pteams ?? []) {
+    const squad = ((t.squad_player_ids as string[] | null) ?? []) as string[];
+    squadByTeamId.set(t.id as string, squad);
     for (const pid of (t.squad_player_ids as string[] | null) ?? []) {
       playerToTeam.set(pid, t.id);
     }
+  }
+
+  const allSquadPlayerIds = [...new Set([...squadByTeamId.values()].flat())];
+  const priceByPlayerId = new Map<string, number>();
+  if (allSquadPlayerIds.length) {
+    const { data: priceRows, error: prErr } = await supabase
+      .from("players")
+      .select("id, base_price")
+      .in("id", allSquadPlayerIds);
+    if (prErr) {
+      console.error(prErr.message);
+      process.exit(1);
+    }
+    for (const r of (priceRows ?? []) as Array<{ id: string; base_price: number }>) {
+      priceByPlayerId.set(r.id, Number(r.base_price ?? 0));
+    }
+  }
+
+  const pickTopByPrice = (playerIds: string[], k: number): string[] => {
+    return playerIds
+      .slice()
+      .sort((a, b) => {
+        const pa = priceByPlayerId.get(a) ?? 0;
+        const pb = priceByPlayerId.get(b) ?? 0;
+        if (pb !== pa) return pb - pa;
+        return String(a).localeCompare(String(b));
+      })
+      .slice(0, k);
+  };
+
+  const autoXiByTeamId = new Map<string, string[]>();
+  for (const t of teamList) {
+    const xi = (t.starting_xi_player_ids ?? []).filter(Boolean);
+    if (xi.length > 0) continue;
+    const squad = (squadByTeamId.get(t.id) ?? []).filter(Boolean);
+    autoXiByTeamId.set(t.id, pickTopByPrice(squad, xiSize));
   }
 
   const { data: dbPlayers, error: plErr } = await supabase
@@ -155,6 +197,20 @@ async function main() {
 
   const lineupByTeam = new Map(teamList.map((t) => [t.id, t]));
 
+  console.log("--- XI + C/VC resolution (script) ---");
+  for (const t of teamList) {
+    const rawXi = (t.starting_xi_player_ids ?? []).filter(Boolean);
+    const isAutoXi = rawXi.length === 0 && (autoXiByTeamId.get(t.id)?.length ?? 0) > 0;
+    const xi = isAutoXi ? (autoXiByTeamId.get(t.id) ?? []) : rawXi;
+    const picked = pickTopByPrice(xi, 2);
+    const captain = t.captain_player_id ?? picked[0] ?? null;
+    const vice = t.vice_captain_player_id ?? picked[1] ?? null;
+    const label = isAutoXi ? `auto-xi (top ${xiSize} by base_price)` : rawXi.length ? "manual xi" : "empty xi (no auto-xi)";
+    const capName = captain ? nameById.get(captain) ?? captain : "—";
+    const vcName = vice ? nameById.get(vice) ?? vice : "—";
+    console.log(`${t.team_name}: ${label} · XI=${xi.length} · C=${capName} · VC=${vcName}`);
+  }
+
   for (const row of mapped.performances) {
     const teamId = playerToTeam.get(row.player_id);
     if (!teamId) continue;
@@ -168,11 +224,16 @@ async function main() {
 
     const { total: baseTotal } = scorePlayerMatch(stats);
     const teamRow = lineupByTeam.get(teamId)!;
-    const xi = teamRow.starting_xi_player_ids ?? [];
+    const rawXi = (teamRow.starting_xi_player_ids ?? []).filter(Boolean);
+    const isAutoXi = rawXi.length === 0 && (autoXiByTeamId.get(teamId)?.length ?? 0) > 0;
+    const xi = isAutoXi ? (autoXiByTeamId.get(teamId) ?? []) : rawXi;
+    const picked = pickTopByPrice(xi, 2);
+    const captainPlayerId = teamRow.captain_player_id ?? picked[0] ?? null;
+    const viceCaptainPlayerId = teamRow.vice_captain_player_id ?? picked[1] ?? null;
     const { effective, counted, multiplier } = effectivePointsWithLineup(baseTotal, row.player_id, {
       startingXiPlayerIds: xi.filter(Boolean),
-      captainPlayerId: teamRow.captain_player_id,
-      viceCaptainPlayerId: teamRow.vice_captain_player_id,
+      captainPlayerId,
+      viceCaptainPlayerId,
     });
     if (!counted) continue;
 

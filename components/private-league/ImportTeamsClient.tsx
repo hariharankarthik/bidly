@@ -20,6 +20,7 @@ export function ImportTeamsClient({ leagueId }: { leagueId: string }) {
   const [playerCol, setPlayerCol] = useState("");
   const [teamCol, setTeamCol] = useState("");
   const [cvcCol, setCvcCol] = useState("");
+  const [priceCol, setPriceCol] = useState("");
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
 
@@ -50,6 +51,7 @@ export function ImportTeamsClient({ leagueId }: { leagueId: string }) {
             player_name: playerCol,
             ...(teamCol.trim() ? { team: teamCol.trim() } : {}),
             ...(cvcCol.trim() ? { cvc: cvcCol.trim() } : {}),
+            ...(priceCol.trim() ? { price: priceCol.trim() } : {}),
           },
         }),
       });
@@ -92,6 +94,7 @@ export function ImportTeamsClient({ leagueId }: { leagueId: string }) {
             player_name: playerCol,
             ...(teamCol.trim() ? { team: teamCol.trim() } : {}),
             ...(cvcCol.trim() ? { cvc: cvcCol.trim() } : {}),
+            ...(priceCol.trim() ? { price: priceCol.trim() } : {}),
           },
         }),
       });
@@ -135,7 +138,7 @@ export function ImportTeamsClient({ leagueId }: { leagueId: string }) {
       </div>
 
       {headers.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-4">
           <div className="space-y-1">
             <Label>Player name column</Label>
             <select
@@ -171,6 +174,21 @@ export function ImportTeamsClient({ leagueId }: { leagueId: string }) {
             <select
               value={cvcCol}
               onChange={(e) => setCvcCol(e.target.value)}
+              className="w-full rounded-lg border border-white/10 bg-neutral-950/70 px-2 py-2 text-sm"
+            >
+              <option value="">None</option>
+              {headers.map((h) => (
+                <option key={h} value={h}>
+                  {h}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label>Price / amount column (optional)</Label>
+            <select
+              value={priceCol}
+              onChange={(e) => setPriceCol(e.target.value)}
               className="w-full rounded-lg border border-white/10 bg-neutral-950/70 px-2 py-2 text-sm"
             >
               <option value="">None</option>

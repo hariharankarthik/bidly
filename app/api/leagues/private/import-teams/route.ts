@@ -151,6 +151,7 @@ export async function POST(req: NextRequest) {
     owner_id: user.id,
     team_name: t.team_name,
     squad_player_ids: t.squad_player_ids,
+    squad_player_prices: t.squad_player_prices ?? {},
     starting_xi_player_ids: [] as string[],
     captain_player_id: t.captain_player_id,
     vice_captain_player_id: t.vice_captain_player_id,

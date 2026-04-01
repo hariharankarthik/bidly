@@ -98,12 +98,13 @@ export async function POST(req: NextRequest) {
   const squadByTeamId = new Map<string, string[]>();
   const autoXiByTeamId = new Map<string, string[]>();
   const priceByPlayerId = new Map<string, number>();
+  const spentByTeamId = new Map<string, Record<string, number>>();
 
   if (isPrivate) {
     scoreKind = "private";
     const { data: pteams, error: ptErr } = await supabase
       .from("private_league_teams")
-      .select("id, squad_player_ids, starting_xi_player_ids, captain_player_id, vice_captain_player_id")
+      .select("id, squad_player_ids, squad_player_prices, starting_xi_player_ids, captain_player_id, vice_captain_player_id")
       .eq("league_id", league_id);
     if (ptErr) return NextResponse.json({ error: ptErr.message }, { status: 500 });
     teamList = (pteams ?? []).map((t) => ({
@@ -115,12 +116,19 @@ export async function POST(req: NextRequest) {
     for (const t of pteams ?? []) {
       const squad = (t.squad_player_ids ?? []) as string[];
       squadByTeamId.set(t.id as string, squad);
+      spentByTeamId.set(
+        t.id as string,
+        (t.squad_player_prices && typeof t.squad_player_prices === "object"
+          ? (t.squad_player_prices as Record<string, number>)
+          : {}) ?? {},
+      );
       for (const pid of t.squad_player_ids ?? []) {
         playerToTeam.set(pid, t.id);
       }
     }
 
-    // If a team hasn't set a Playing XI, default to their 11 most expensive squad players.
+    // If a team hasn't set a Playing XI, default to their 11 most expensive squad players
+    // by amount spent in the offline draft (`squad_player_prices`), falling back to `players.base_price`.
     const allSquadPlayerIds = [...new Set((pteams ?? []).flatMap((t) => (t.squad_player_ids ?? []) as string[]))];
     if (allSquadPlayerIds.length) {
       const { data: priceRows, error: prErr } = await supabase
@@ -137,9 +145,13 @@ export async function POST(req: NextRequest) {
       const xi = t.starting_xi_player_ids ?? [];
       if (xi.length > 0) continue;
       const squad = squadByTeamId.get(t.id) ?? [];
+      const spent = spentByTeamId.get(t.id) ?? {};
       const sorted = squad
         .slice()
         .sort((a, b) => {
+          const sa = Number(spent[a] ?? 0);
+          const sb = Number(spent[b] ?? 0);
+          if (sb !== sa) return sb - sa;
           const pa = priceByPlayerId.get(a) ?? 0;
           const pb = priceByPlayerId.get(b) ?? 0;
           if (pb !== pa) return pb - pa;
@@ -263,10 +275,14 @@ export async function POST(req: NextRequest) {
     const lineupByTeam = new Map<string, TeamLineupRow>();
     for (const t of teamList) lineupByTeam.set(t.id, t);
 
-    const pickTopByPrice = (playerIds: string[], k: number): string[] => {
+    const pickTopBySpent = (teamId: string, playerIds: string[], k: number): string[] => {
+      const spent = spentByTeamId.get(teamId) ?? {};
       return playerIds
         .slice()
         .sort((a, b) => {
+          const sa = Number(spent[a] ?? 0);
+          const sb = Number(spent[b] ?? 0);
+          if (sb !== sa) return sb - sa;
           const pa = priceByPlayerId.get(a) ?? 0;
           const pb = priceByPlayerId.get(b) ?? 0;
           if (pb !== pa) return pb - pa;
@@ -298,7 +314,7 @@ export async function POST(req: NextRequest) {
       const rawXi = teamRow?.starting_xi_player_ids ?? [];
       const isAutoXi = isPrivate && rawXi.length === 0 && (autoXiByTeamId.get(teamId)?.length ?? 0) > 0;
       const xi = isAutoXi ? (autoXiByTeamId.get(teamId) ?? []) : rawXi;
-      const picked = isPrivate ? pickTopByPrice(xi, 2) : [];
+      const picked = isPrivate ? pickTopBySpent(teamId, xi, 2) : [];
       const captainPlayerId =
         (teamRow?.captain_player_id ?? null) ?? (isPrivate ? (picked[0] ?? null) : null);
       const viceCaptainPlayerId =
