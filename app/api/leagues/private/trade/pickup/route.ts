@@ -48,17 +48,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Player to drop is not on your squad" }, { status: 400 });
   }
 
-  // Verify requested player is not on any team in this league
-  const { data: allTeams } = await supabase
-    .from("private_league_teams")
-    .select("squad_player_ids")
-    .eq("league_id", league_id);
-  const allPicked = new Set((allTeams ?? []).flatMap((t) => (t.squad_player_ids as string[]) ?? []));
-  if (allPicked.has(requested_player_id)) {
-    return NextResponse.json({ error: "This player is already on a team" }, { status: 400 });
-  }
-
   // Insert trade row with NULL recipient (free agent pickup), then execute atomically
+  // The execute_pickup DB function handles the free-agent check under lock
   const { data: trade, error: insertErr } = await supabase
     .from("private_league_trades")
     .insert({

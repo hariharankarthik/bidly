@@ -91,9 +91,6 @@ DECLARE
   v_trade private_league_trades%ROWTYPE;
   v_proposer private_league_teams%ROWTYPE;
   v_recipient private_league_teams%ROWTYPE;
-  v_prop_overseas_after INT;
-  v_recip_overseas_after INT;
-  v_max_overseas INT := 4; -- IPL default
 BEGIN
   -- Lock the trade row
   SELECT * INTO v_trade
@@ -138,23 +135,8 @@ BEGIN
     RETURN jsonb_build_object('error', 'Requested player is no longer on recipient squad');
   END IF;
 
-  -- Check overseas limits after swap
-  SELECT COUNT(*) INTO v_prop_overseas_after
-    FROM players p
-    WHERE p.id = ANY(
-      array_remove(v_proposer.squad_player_ids, v_trade.offered_player_id) || v_trade.requested_player_id
-    )
-    AND p.is_overseas = true;
-
-  SELECT COUNT(*) INTO v_recip_overseas_after
-    FROM players p
-    WHERE p.id = ANY(
-      array_remove(v_recipient.squad_player_ids, v_trade.requested_player_id) || v_trade.offered_player_id
-    )
-    AND p.is_overseas = true;
-
-  -- Note: overseas limit is for XI, not full squad. Skip squad-level check.
-  -- The user must re-validate their XI after trade anyway.
+  -- Trade is 1-for-1 swap, squad sizes stay the same.
+  -- Overseas limit is enforced at XI level, not squad level.
 
   -- Perform the swap on proposer team
   UPDATE private_league_teams SET
@@ -204,8 +186,8 @@ AS $$
 DECLARE
   v_trade private_league_trades%ROWTYPE;
   v_team private_league_teams%ROWTYPE;
-  v_league_id UUID;
   v_already_picked BOOLEAN;
+  v_max_squad INT := 15;
 BEGIN
   -- Lock the trade row
   SELECT * INTO v_trade
@@ -225,11 +207,15 @@ BEGIN
     RETURN jsonb_build_object('error', 'This is not a free agent pickup');
   END IF;
 
-  -- Lock the team
+  -- Lock ALL teams in this league to prevent concurrent pickup races
+  PERFORM id FROM private_league_teams
+    WHERE league_id = v_trade.league_id
+    FOR UPDATE;
+
+  -- Re-read proposer team after acquiring locks
   SELECT * INTO v_team
     FROM private_league_teams
-    WHERE id = v_trade.proposer_team_id
-    FOR UPDATE;
+    WHERE id = v_trade.proposer_team_id;
 
   IF v_team.claimed_by != p_user_id THEN
     RETURN jsonb_build_object('error', 'Only the team owner can execute this pickup');
@@ -240,7 +226,7 @@ BEGIN
     RETURN jsonb_build_object('error', 'Player to drop is no longer on your squad');
   END IF;
 
-  -- Verify requested player is not on any squad in this league
+  -- Verify requested player is not on any squad in this league (safe under lock)
   SELECT EXISTS (
     SELECT 1 FROM private_league_teams plt
     WHERE plt.league_id = v_trade.league_id
@@ -277,6 +263,63 @@ BEGIN
       offered_player_id = v_trade.offered_player_id
       OR requested_player_id = v_trade.offered_player_id
     );
+
+  RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+-- 6. Atomic add-to-squad function (free agent, no drop)
+CREATE OR REPLACE FUNCTION add_free_agent_to_squad(p_league_id UUID, p_team_id UUID, p_player_id UUID, p_user_id UUID)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_team private_league_teams%ROWTYPE;
+  v_already_picked BOOLEAN;
+  v_max_squad INT := 15;
+BEGIN
+  -- Lock ALL teams in this league to prevent concurrent add races
+  PERFORM id FROM private_league_teams
+    WHERE league_id = p_league_id
+    FOR UPDATE;
+
+  -- Read the team after lock
+  SELECT * INTO v_team
+    FROM private_league_teams
+    WHERE id = p_team_id AND league_id = p_league_id;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('error', 'Team not found');
+  END IF;
+
+  IF v_team.claimed_by != p_user_id THEN
+    RETURN jsonb_build_object('error', 'Only the team owner can add players');
+  END IF;
+
+  IF array_length(v_team.squad_player_ids, 1) >= v_max_squad THEN
+    RETURN jsonb_build_object('error', 'Squad is already at maximum size (15)');
+  END IF;
+
+  IF p_player_id = ANY(v_team.squad_player_ids) THEN
+    RETURN jsonb_build_object('error', 'Player is already on your squad');
+  END IF;
+
+  -- Check no other team has this player (safe under lock)
+  SELECT EXISTS (
+    SELECT 1 FROM private_league_teams plt
+    WHERE plt.league_id = p_league_id
+      AND p_player_id = ANY(plt.squad_player_ids)
+  ) INTO v_already_picked;
+
+  IF v_already_picked THEN
+    RETURN jsonb_build_object('error', 'This player is already on a team');
+  END IF;
+
+  -- Add to squad
+  UPDATE private_league_teams SET
+    squad_player_ids = squad_player_ids || p_player_id
+  WHERE id = p_team_id;
 
   RETURN jsonb_build_object('success', true);
 END;

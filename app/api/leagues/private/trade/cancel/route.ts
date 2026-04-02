@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
     .from("private_league_trades")
     .update({
       status: "cancelled",
+      resolved_by: user.id,
       resolved_at: new Date().toISOString(),
     })
     .eq("id", trade_id)
