@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { PlayerMeta } from "@/components/player/PlayerMeta";
+import { FreeAgentPickupModal } from "./FreeAgentPickupModal";
 
 export interface FreeAgent {
   id: string;
@@ -13,13 +15,61 @@ export interface FreeAgent {
   ipl_team: string | null;
 }
 
+interface SquadPlayer {
+  id: string;
+  name: string;
+  role: string;
+  nationality: string | null;
+  is_overseas: boolean;
+}
+
 const ROLE_ORDER: Record<string, number> = { WK: 0, BAT: 1, ALL: 2, BOWL: 3 };
 const ROLE_FILTERS = ["All", "WK", "BAT", "ALL", "BOWL"] as const;
+const MAX_SQUAD_SIZE = 15;
 
-export function FreeAgentsList({ players }: { players: FreeAgent[] }) {
+export function FreeAgentsList({
+  players,
+  leagueId,
+  leagueStatus,
+  mySquad,
+  pendingPlayerIds,
+}: {
+  players: FreeAgent[];
+  leagueId?: string;
+  leagueStatus?: string;
+  mySquad?: SquadPlayer[];
+  pendingPlayerIds?: Set<string>;
+}) {
+  const router = useRouter();
   const [roleFilter, setRoleFilter] = useState<string>("All");
   const [teamFilter, setTeamFilter] = useState<string>("All");
   const [search, setSearch] = useState("");
+  const [pickupTarget, setPickupTarget] = useState<FreeAgent | null>(null);
+  const [addingPlayerId, setAddingPlayerId] = useState<string | null>(null);
+
+  const isActive = leagueStatus === "active" && leagueId;
+  const hasTeam = mySquad && mySquad.length > 0;
+  const canPickUp = isActive && hasTeam;
+  const squadSize = mySquad?.length ?? 0;
+  const squadFull = squadSize >= MAX_SQUAD_SIZE;
+  const canAddToSquad = isActive && hasTeam && !squadFull;
+
+  const handleAddToSquad = async (playerId: string) => {
+    if (!leagueId) return;
+    setAddingPlayerId(playerId);
+    try {
+      const res = await fetch("/api/leagues/private/trade/add-to-squad", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ league_id: leagueId, player_id: playerId }),
+      });
+      if (res.ok) {
+        router.refresh();
+      }
+    } finally {
+      setAddingPlayerId(null);
+    }
+  };
 
   const iplTeams = useMemo(() => {
     const teams = [...new Set(players.map((p) => p.ipl_team).filter(Boolean))] as string[];
@@ -128,9 +178,31 @@ export function FreeAgentsList({ players }: { players: FreeAgent[] }) {
                       <PlayerMeta variant="inline" role={p.role} nationality={p.nationality} isOverseas={p.is_overseas} className="shrink-0" />
                       <span className="truncate text-neutral-100">{p.name}</span>
                     </div>
-                    {p.base_price > 0 ? (
-                      <span className="shrink-0 text-xs text-neutral-500">₹{p.base_price}L</span>
-                    ) : null}
+                    <div className="flex items-center gap-2">
+                      {p.base_price > 0 ? (
+                        <span className="shrink-0 text-xs text-neutral-500">₹{p.base_price}L</span>
+                      ) : null}
+                      {isActive && hasTeam ? (
+                        <>
+                          <button
+                            onClick={() => handleAddToSquad(p.id)}
+                            disabled={squadFull || addingPlayerId === p.id || pendingPlayerIds?.has(p.id)}
+                            title={squadFull ? `Squad full (${MAX_SQUAD_SIZE}/${MAX_SQUAD_SIZE})` : "Add to your squad"}
+                            className="shrink-0 cursor-pointer rounded-lg bg-blue-600/20 px-2.5 py-1 text-[11px] font-semibold text-blue-300 ring-1 ring-blue-500/25 transition hover:bg-blue-600/30 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            {addingPlayerId === p.id ? "Adding…" : "Add"}
+                          </button>
+                          <button
+                            onClick={() => setPickupTarget(p)}
+                            disabled={pendingPlayerIds?.has(p.id)}
+                            title="Drop one of your players and pick up this one"
+                            className="shrink-0 cursor-pointer rounded-lg bg-green-600/20 px-2.5 py-1 text-[11px] font-semibold text-green-300 ring-1 ring-green-500/25 transition hover:bg-green-600/30 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            Pick Up
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -138,6 +210,16 @@ export function FreeAgentsList({ players }: { players: FreeAgent[] }) {
           ))}
         </div>
       )}
+
+      {pickupTarget && canPickUp ? (
+        <FreeAgentPickupModal
+          leagueId={leagueId!}
+          targetPlayer={pickupTarget}
+          mySquad={mySquad!}
+          pendingPlayerIds={pendingPlayerIds ?? new Set()}
+          onClose={() => setPickupTarget(null)}
+        />
+      ) : null}
     </div>
   );
 }

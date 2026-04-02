@@ -3,12 +3,13 @@
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useCallback } from "react";
 
-export const LEAGUE_TABS = ["free-agents", "rosters", "leaderboard"] as const;
+export const LEAGUE_TABS = ["free-agents", "rosters", "trades", "leaderboard"] as const;
 export type LeagueTab = (typeof LEAGUE_TABS)[number];
 
 const TAB_LABELS: Record<LeagueTab, string> = {
   "free-agents": "Free Agents",
   rosters: "Rosters",
+  trades: "Trades",
   leaderboard: "Leaderboard",
 };
 

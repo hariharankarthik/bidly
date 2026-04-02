@@ -19,6 +19,8 @@ import { PrivateLineupPanel, type PrivateTeamPlayer } from "@/components/private
 import { FreeAgentsList, type FreeAgent } from "@/components/private-league/FreeAgentsList";
 import { LeagueTabNav } from "@/components/private-league/LeagueTabNav";
 import { LeagueTabContent } from "@/components/private-league/LeagueTabContent";
+import { TradesList, type TradeRecord } from "@/components/private-league/TradesList";
+import { RosterWithTrade } from "@/components/private-league/RosterWithTrade";
 
 export default async function PrivateLeaguePage({ params }: { params: Promise<{ leagueId: string }> }) {
   const { leagueId } = await params;
@@ -93,6 +95,49 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
     ipl_team: p.ipl_team ?? null,
   }));
 
+  // Trades data
+  const { data: tradeRows } = await supabase
+    .from("private_league_trades")
+    .select("id, league_id, proposer_team_id, recipient_team_id, offered_player_id, requested_player_id, status, created_at, resolved_at")
+    .eq("league_id", leagueId)
+    .order("created_at", { ascending: false });
+
+  const trades: TradeRecord[] = (tradeRows ?? []) as TradeRecord[];
+
+  // Collect all player IDs referenced in trades for name resolution
+  const tradePlayerIds = [
+    ...new Set(trades.flatMap((t) => [t.offered_player_id, t.requested_player_id])),
+  ].filter((id) => !playersById.has(id));
+  if (tradePlayerIds.length > 0) {
+    const { data: tradePlayerRows } = await supabase
+      .from("players")
+      .select("id, name, role, nationality, is_overseas")
+      .in("id", tradePlayerIds);
+    for (const p of tradePlayerRows ?? []) {
+      playersById.set(p.id, p);
+    }
+  }
+
+  // Build lookups for TradesList
+  const tradesPlayersById: Record<string, { id: string; name: string; role: string; nationality: string | null; is_overseas: boolean }> =
+    Object.fromEntries([...playersById.entries()]);
+  const tradesTeamsById: Record<string, { id: string; team_name: string; team_color: string }> =
+    Object.fromEntries((privateTeams ?? []).map((t) => [t.id, { id: t.id, team_name: t.team_name, team_color: t.team_color ?? "#3B82F6" }]));
+
+  // Pending trade player IDs (for disabling buttons)
+  const pendingTrades = trades.filter((t) => t.status === "pending");
+  const pendingPlayerIds = new Set(pendingTrades.flatMap((t) => [t.offered_player_id, t.requested_player_id]));
+  const incomingPendingCount = pendingTrades.filter((t) => t.recipient_team_id === myClaimedTeamId).length;
+
+  // My squad data for trade/pickup modals
+  const myTeamData = myClaimedTeamId ? (privateTeams ?? []).find((t) => t.id === myClaimedTeamId) : null;
+  const mySquadPlayers = myTeamData
+    ? ((myTeamData.squad_player_ids as string[]) ?? [])
+        .map((id) => playersById.get(id))
+        .filter(Boolean)
+        .map((p) => ({ id: p!.id, name: p!.name, role: p!.role, nationality: p!.nationality, is_overseas: p!.is_overseas }))
+    : [];
+
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-6">
       <PageHeader
@@ -156,13 +201,20 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
             counts={{
               "free-agents": freeAgents.length,
               rosters: privateTeams.length,
+              trades: incomingPendingCount > 0 ? incomingPendingCount : undefined,
             }}
           />
           <LeagueTabContent>
             {{
               "free-agents": (
                 <section className="space-y-3">
-                  <FreeAgentsList players={freeAgents} />
+                  <FreeAgentsList
+                    players={freeAgents}
+                    leagueId={leagueId}
+                    leagueStatus={league.status}
+                    mySquad={mySquadPlayers}
+                    pendingPlayerIds={pendingPlayerIds}
+                  />
                 </section>
               ),
               rosters: (
@@ -236,39 +288,54 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
                             </div>
                           </summary>
 
-                          <div className="mt-4 grid gap-2">
-                            {squad
-                              .slice()
-                              .sort((a, b) => a.name.localeCompare(b.name))
-                              .map((p) => {
-                                const isC = cId === p.id;
-                                const isVC = vcId === p.id;
-                                return (
-                                  <div
-                                    key={p.id}
-                                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-neutral-950/35 px-3 py-2 text-sm"
-                                  >
-                                    <div className="min-w-0">
-                                      <p className="truncate text-neutral-100">
-                                        <PlayerMeta variant="inline" role={p.role} nationality={p.nationality} isOverseas={p.is_overseas} className="mr-2 align-middle" />
-                                        {p.name}{" "}
-                                        {isC ? <span className="text-blue-200">(C)</span> : isVC ? <span className="text-sky-200">(VC)</span> : null}
-                                      </p>
+                          {/* Squad display: use RosterWithTrade for other teams in active leagues */}
+                          {!isMine && league.status === "active" && myClaimedTeamId ? (
+                            <RosterWithTrade
+                              leagueId={leagueId}
+                              teamId={t.id}
+                              teamName={t.team_name}
+                              squad={squad}
+                              captainId={cId}
+                              viceCaptainId={vcId}
+                              mySquad={mySquadPlayers}
+                              pendingPlayerIds={pendingPlayerIds}
+                              canTrade={true}
+                            />
+                          ) : (
+                            <div className="mt-4 grid gap-2">
+                              {squad
+                                .slice()
+                                .sort((a, b) => a.name.localeCompare(b.name))
+                                .map((p) => {
+                                  const isC = cId === p.id;
+                                  const isVC = vcId === p.id;
+                                  return (
+                                    <div
+                                      key={p.id}
+                                      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-neutral-950/35 px-3 py-2 text-sm"
+                                    >
+                                      <div className="min-w-0">
+                                        <p className="truncate text-neutral-100">
+                                          <PlayerMeta variant="inline" role={p.role} nationality={p.nationality} isOverseas={p.is_overseas} className="mr-2 align-middle" />
+                                          {p.name}{" "}
+                                          {isC ? <span className="text-blue-200">(C)</span> : isVC ? <span className="text-sky-200">(VC)</span> : null}
+                                        </p>
+                                      </div>
                                     </div>
-                                  </div>
-                                );
-                              })}
-                            {squad.length === 0 ? (
-                              <Card className="border-amber-500/25 bg-amber-950/15">
-                                <CardHeader className="pb-2">
-                                  <CardTitle className="text-base">No players imported</CardTitle>
-                                </CardHeader>
-                                <CardContent className="text-sm text-amber-100/90">
-                                  {isHost ? "Import a sheet to populate this roster." : "Ask the host to import a sheet."}
-                                </CardContent>
-                              </Card>
-                            ) : null}
-                          </div>
+                                  );
+                                })}
+                              {squad.length === 0 ? (
+                                <Card className="border-amber-500/25 bg-amber-950/15">
+                                  <CardHeader className="pb-2">
+                                    <CardTitle className="text-base">No players imported</CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="text-sm text-amber-100/90">
+                                    {isHost ? "Import a sheet to populate this roster." : "Ask the host to import a sheet."}
+                                  </CardContent>
+                                </Card>
+                              ) : null}
+                            </div>
+                          )}
 
                           {isMine && league.status === "active" ? (
                             <PrivateLineupPanel
@@ -310,6 +377,24 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
                       );
                     })}
                   </div>
+                </section>
+              ),
+              trades: (
+                <section className="space-y-3">
+                  {league.status === "active" ? (
+                    <TradesList
+                      trades={trades}
+                      myTeamId={myClaimedTeamId}
+                      playersById={tradesPlayersById}
+                      teamsById={tradesTeamsById}
+                    />
+                  ) : (
+                    <p className="py-6 text-center text-sm text-neutral-500">
+                      {league.status === "draft"
+                        ? "Trading is available once the league is started."
+                        : "Trading is closed — the league has ended."}
+                    </p>
+                  )}
                 </section>
               ),
               leaderboard: (

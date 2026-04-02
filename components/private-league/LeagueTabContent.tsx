@@ -29,7 +29,7 @@ export function LeagueTabContent({
   const searchParams = useSearchParams();
   const raw = searchParams.get("tab");
   const activeTab: LeagueTab =
-    raw === "rosters" || raw === "leaderboard" ? raw : "free-agents";
+    raw === "rosters" || raw === "trades" || raw === "leaderboard" ? raw : "free-agents";
 
   const [displayedTab, setDisplayedTab] = useState(activeTab);
   const [phase, setPhase] = useState<"visible" | "fading-out" | "loading">("visible");
