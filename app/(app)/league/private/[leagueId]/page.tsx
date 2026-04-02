@@ -17,8 +17,7 @@ import { UnclaimTeamButton } from "@/components/private-league/UnclaimTeamButton
 import { ReadOnlyLineup } from "@/components/private-league/ReadOnlyLineup";
 import { PrivateLineupPanel, type PrivateTeamPlayer } from "@/components/private-league/PrivateLineupPanel";
 import { FreeAgentsList, type FreeAgent } from "@/components/private-league/FreeAgentsList";
-import { LeagueTabNav } from "@/components/private-league/LeagueTabNav";
-import { LeagueTabContent } from "@/components/private-league/LeagueTabContent";
+import { LeagueTabs } from "@/components/private-league/LeagueTabContent";
 import { TradesList, type TradeRecord } from "@/components/private-league/TradesList";
 import { RosterWithTrade } from "@/components/private-league/RosterWithTrade";
 
@@ -194,17 +193,16 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
         </div>
       ) : null}
 
-      {/* Tab navigation — Free Agents | Rosters | Leaderboard */}
+      {/* Tab navigation + content */}
       {privateTeams && privateTeams.length > 0 ? (
         <Suspense>
-          <LeagueTabNav
+          <LeagueTabs
             counts={{
               "free-agents": freeAgents.length,
               rosters: privateTeams.length,
               trades: incomingPendingCount > 0 ? incomingPendingCount : undefined,
             }}
-          />
-          <LeagueTabContent>
+          >
             {{
               "free-agents": (
                 <section className="space-y-3">
@@ -401,7 +399,7 @@ export default async function PrivateLeaguePage({ params }: { params: Promise<{ 
                 <LeagueClient leagueId={league.id} isHost={isHost} teams={teams} ownersByTeamId={ownersByTeamId} leagueStatus={league.status} myTeamId={myClaimedTeamId ?? undefined} />
               ),
             }}
-          </LeagueTabContent>
+          </LeagueTabs>
         </Suspense>
       ) : null}
 
