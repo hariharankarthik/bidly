@@ -1,7 +1,4 @@
--- RPC to expose match display names from cricket_sync_tracker (which has strict RLS).
--- Returns "Team1 vs Team2" for each match_id, falling back to the raw match_id.
--- Also returns match_date for chronological sorting.
-
+-- Update get_match_display_names to also return match_date for chronological sorting.
 CREATE OR REPLACE FUNCTION get_match_display_names(p_match_ids TEXT[])
 RETURNS TABLE(match_id TEXT, display_name TEXT, match_date TEXT)
 LANGUAGE sql STABLE SECURITY DEFINER
@@ -21,5 +18,3 @@ AS $$
   FROM cricket_sync_tracker cst
   WHERE cst.match_id = ANY(p_match_ids);
 $$;
-
-GRANT EXECUTE ON FUNCTION public.get_match_display_names(TEXT[]) TO authenticated;

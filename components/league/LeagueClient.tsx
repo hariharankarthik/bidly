@@ -38,7 +38,7 @@ export function LeagueClient({
   myTeamId?: string;
 }) {
   const router = useRouter();
-  const { scores, matchNames, loading } = useLeaderboard(leagueId);
+  const { scores, matchNames, matchMeta, loading } = useLeaderboard(leagueId);
   const [busy, setBusy] = useState(false);
   const { loading: cricBusy, syncFromCricApi } = useCricApiMatchScoring();
   const [cricId, setCricId] = useState("");
@@ -204,8 +204,8 @@ export function LeagueClient({
         </div>
       ) : null}
       {loading ? <p className="text-sm text-neutral-500">Loading scores…</p> : null}
-      <Leaderboard scores={scores} teams={teams} ownersByTeamId={ownersByTeamId} todayDate={new Date().toISOString().slice(0, 10)} myTeamId={myTeamId} />
-      <PointsChart scores={scores} teams={teams} matchNames={matchNames} />
+      <Leaderboard scores={scores} teams={teams} ownersByTeamId={ownersByTeamId} matchMeta={matchMeta} myTeamId={myTeamId} />
+      <PointsChart scores={scores} teams={teams} matchNames={matchNames} matchMeta={matchMeta} />
       <MatchBreakdown scores={scores} teams={teams} matchNames={matchNames} />
     </div>
   );
