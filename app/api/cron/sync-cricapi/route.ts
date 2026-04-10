@@ -146,12 +146,7 @@ async function markPending(
   supabase: ReturnType<typeof createServerClient>,
   row: PendingSyncRow,
 ): Promise<void> {
-  const current = await supabase
-    .from("cricket_sync_tracker")
-    .select("attempts")
-    .eq("match_id", row.match_id)
-    .maybeSingle();
-  const attempts = (current.data?.attempts ?? 0) + 1;
+  // Upsert first to ensure the row exists, then atomically increment attempts via rpc
   await supabase.from("cricket_sync_tracker").upsert(
     {
       match_id: row.match_id,
@@ -161,31 +156,25 @@ async function markPending(
       status: "pending",
       last_error_code: row.last_error_code ?? null,
       last_error_message: row.last_error_message ?? null,
-      attempts,
       last_attempt_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },
     { onConflict: "match_id" },
   );
+  // Atomic increment — avoids race condition if cron runs concurrently
+  await supabase.rpc("increment_sync_attempts", { p_match_id: row.match_id });
 }
 
 async function markSynced(
   supabase: ReturnType<typeof createServerClient>,
   row: PendingSyncRow,
 ): Promise<void> {
-  const current = await supabase
-    .from("cricket_sync_tracker")
-    .select("attempts")
-    .eq("match_id", row.match_id)
-    .maybeSingle();
-  const attempts = current.data?.attempts ?? 0;
   await supabase.from("cricket_sync_tracker").upsert(
     {
       match_id: row.match_id,
       match_date: row.match_date,
       teams: row.teams ?? null,
       source_preferred: "cricapi",
-      attempts,
       status: "synced",
       last_error_code: null,
       last_error_message: null,
@@ -201,12 +190,6 @@ async function markFailed(
   supabase: ReturnType<typeof createServerClient>,
   row: PendingSyncRow & { error_code?: string; error_message?: string },
 ): Promise<void> {
-  const current = await supabase
-    .from("cricket_sync_tracker")
-    .select("attempts")
-    .eq("match_id", row.match_id)
-    .maybeSingle();
-  const attempts = (current.data?.attempts ?? 0) + 1;
   await supabase.from("cricket_sync_tracker").upsert(
     {
       match_id: row.match_id,
@@ -216,12 +199,13 @@ async function markFailed(
       status: "failed",
       last_error_code: row.error_code ?? "UNKNOWN",
       last_error_message: row.error_message ?? "Unknown error",
-      attempts,
       last_attempt_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },
     { onConflict: "match_id" },
   );
+  // Atomic increment
+  await supabase.rpc("increment_sync_attempts", { p_match_id: row.match_id });
 }
 
 /**
@@ -539,9 +523,19 @@ export async function GET(req: NextRequest) {
     const expectedTeams = meta?.teams ?? pendingMeta?.teams ?? undefined;
     const effectiveMatchDate = meta?.matchDate ?? pendingMeta?.match_date ?? cronMatchDate;
 
-    // Skip matches that have exceeded max retry attempts
+    // Look up actual attempt count from tracker (covers both pending and newly discovered matches)
     const MAX_ATTEMPTS = 10;
-    const priorAttempts = pendingMeta?.attempts ?? 0;
+    let priorAttempts = pendingMeta?.attempts ?? 0;
+    if (!pendingMeta) {
+      const { data: trackerRow } = await supabaseAdmin
+        .from("cricket_sync_tracker")
+        .select("attempts, status")
+        .eq("match_id", matchId)
+        .maybeSingle();
+      if (trackerRow) {
+        priorAttempts = trackerRow.attempts ?? 0;
+      }
+    }
     if (priorAttempts >= MAX_ATTEMPTS) {
       skippedMaxAttempts += 1;
       // Mark permanently failed if not already
