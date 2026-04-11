@@ -500,7 +500,21 @@ export function mergeFieldingFromCricApiJson(
     fieldingCounts.set(key, cur);
   }
 
-  // Walk through every batting row in the payload and parse dismissal text
+  // First pass: check if explicit catching[] arrays exist anywhere
+  let hasCatchingArrays = false;
+  function checkForCatchingArrays(node: unknown) {
+    if (!node || typeof node !== "object") return;
+    if (Array.isArray(node)) { for (const x of node) checkForCatchingArrays(x); return; }
+    const o = node as Record<string, unknown>;
+    if (Array.isArray(o.catching ?? o.Catching)) { hasCatchingArrays = true; return; }
+    for (const v of Object.values(o)) { if (hasCatchingArrays) return; checkForCatchingArrays(v); }
+  }
+  const root = typeof data === "object" && data !== null && "data" in (data as object)
+    ? (data as { data: unknown }).data
+    : data;
+  checkForCatchingArrays(root);
+
+  // Walk through payload — use catching[] if available, else parse dismissal strings
   function visit(node: unknown) {
     if (!node) return;
     if (Array.isArray(node)) {
@@ -510,11 +524,13 @@ export function mergeFieldingFromCricApiJson(
     if (typeof node !== "object") return;
     const o = node as Record<string, unknown>;
 
-    // Parse dismissal text from batting rows
-    const dismissal = getDismissalText(o);
-    if (dismissal) {
-      const credits = parseFieldingCredits(dismissal);
-      for (const c of credits) creditFielder(c.fielderName, c.type);
+    // Only parse dismissal text if no explicit catching[] arrays exist
+    if (!hasCatchingArrays) {
+      const dismissal = getDismissalText(o);
+      if (dismissal) {
+        const credits = parseFieldingCredits(dismissal);
+        for (const c of credits) creditFielder(c.fielderName, c.type);
+      }
     }
 
     // CricAPI v1 match_scorecard: explicit catching[] array
@@ -553,9 +569,6 @@ export function mergeFieldingFromCricApiJson(
     for (const v of Object.values(o)) visit(v);
   }
 
-  const root = typeof data === "object" && data !== null && "data" in (data as object)
-    ? (data as { data: unknown }).data
-    : data;
   visit(root);
 
   // Apply fielding counts to matching performances
