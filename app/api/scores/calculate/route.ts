@@ -405,6 +405,25 @@ export async function POST(req: NextRequest) {
     });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+    // Extract first bowling & catching entry for debugging
+    const firstEntries = (() => {
+      if (!cricapiRaw || typeof cricapiRaw !== "object") return undefined;
+      const raw = cricapiRaw as Record<string, unknown>;
+      const data = raw.data && typeof raw.data === "object" ? raw.data as Record<string, unknown> : null;
+      if (!data) return undefined;
+      const scorecard = Array.isArray(data.scorecard) ? data.scorecard : [];
+      const first = scorecard[0] as Record<string, unknown> | undefined;
+      if (!first) return undefined;
+      const bowlingArr = Array.isArray(first.bowling) ? first.bowling : [];
+      const catchingArr = Array.isArray(first.catching) ? first.catching : [];
+      return {
+        first_bowling_entry: bowlingArr[0] ?? null,
+        first_catching_entry: catchingArr[0] ?? null,
+        bowling_count: bowlingArr.length,
+        catching_count: catchingArr.length,
+      };
+    })();
+
     // Build deep structure summary of raw CricAPI response for debugging
     const rawShape = (() => {
       if (!cricapiRaw) return undefined;
@@ -447,6 +466,7 @@ export async function POST(req: NextRequest) {
           .map((p) => ({ player_id: p.player_id, fielding: p.fielding })),
       } : undefined,
       raw_shape: cricapiUsed ? rawShape : undefined,
+      raw_first_entries: cricapiUsed ? firstEntries : undefined,
     });
   }
 

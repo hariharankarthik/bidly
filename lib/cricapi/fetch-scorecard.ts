@@ -186,6 +186,18 @@ export function extractPerformancesFromCricApiJson(data: unknown): CricApiMapped
     const o = root as Record<string, unknown>;
     if (Array.isArray(o.score)) ingestInningsList(o.score as unknown[]);
     if (Array.isArray(o.innings)) ingestInningsList(o.innings as unknown[]);
+    // CricAPI v1 match_scorecard: data.scorecard[].batting[]
+    if (Array.isArray(o.scorecard)) {
+      for (const inn of o.scorecard as unknown[]) {
+        if (!inn || typeof inn !== "object") continue;
+        const batting = (inn as Record<string, unknown>).batting;
+        if (Array.isArray(batting)) {
+          for (const raw of batting) {
+            if (raw && typeof raw === "object") addFromObject(raw as Record<string, unknown>);
+          }
+        }
+      }
+    }
   }
 
   const visit = (node: unknown) => {
@@ -293,7 +305,14 @@ export function mergeBowlingFromCricApiJson(
       for (const raw of bowl) {
         if (!raw || typeof raw !== "object") continue;
         const r = raw as Record<string, unknown>;
-        const name = str(r.bowler ?? r.name ?? r.player ?? r.Bowler);
+        // CricAPI bowling entries may have the name in various fields
+        const nameCandidate = r.bowler ?? r.name ?? r.player ?? r.Bowler;
+        // Handle nested object: {bowler: {name: "X"}} or {bowler: {id: "...", name: "X"}}
+        const name = typeof nameCandidate === "string"
+          ? str(nameCandidate)
+          : (nameCandidate && typeof nameCandidate === "object"
+            ? str((nameCandidate as Record<string, unknown>).name ?? (nameCandidate as Record<string, unknown>).displayName ?? "")
+            : "");
         if (!name) continue;
         const row = resolveBowler(name);
         if (!row) continue;
@@ -488,11 +507,47 @@ export function mergeFieldingFromCricApiJson(
     }
     if (typeof node !== "object") return;
     const o = node as Record<string, unknown>;
+
+    // Parse dismissal text from batting rows
     const dismissal = getDismissalText(o);
     if (dismissal) {
       const credits = parseFieldingCredits(dismissal);
       for (const c of credits) creditFielder(c.fielderName, c.type);
     }
+
+    // CricAPI v1 match_scorecard: explicit catching[] array
+    const catching = o.catching ?? o.Catching ?? o.fielding ?? o.Fielding;
+    if (Array.isArray(catching)) {
+      for (const raw of catching) {
+        if (!raw || typeof raw !== "object") continue;
+        const r = raw as Record<string, unknown>;
+        const nameCandidate = r.fielder ?? r.name ?? r.player ?? r.Fielder;
+        const fielderName = typeof nameCandidate === "string"
+          ? str(nameCandidate)
+          : (nameCandidate && typeof nameCandidate === "object"
+            ? str((nameCandidate as Record<string, unknown>).name ?? "")
+            : "");
+        if (!fielderName) continue;
+        const catches = num(r.catch ?? r.catches ?? r.c ?? 0);
+        const stumpings = num(r.stumpiing ?? r.stumped ?? r.stumpings ?? r.st ?? 0);
+        const runOuts = num(r.runout ?? r.runOut ?? r["run out"] ?? r.runouts ?? 0);
+        // If explicit counts are provided, credit them directly
+        if (catches > 0) {
+          for (let i = 0; i < catches; i++) creditFielder(fielderName, "catch");
+        }
+        if (stumpings > 0) {
+          for (let i = 0; i < stumpings; i++) creditFielder(fielderName, "stumping");
+        }
+        if (runOuts > 0) {
+          for (let i = 0; i < runOuts; i++) creditFielder(fielderName, "runOutDirect");
+        }
+        // If no specific counts but entry exists, assume 1 catch (common CricAPI pattern)
+        if (catches === 0 && stumpings === 0 && runOuts === 0) {
+          creditFielder(fielderName, "catch");
+        }
+      }
+    }
+
     for (const v of Object.values(o)) visit(v);
   }
 
