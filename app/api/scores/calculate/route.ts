@@ -29,9 +29,10 @@ async function mapCricApiNamesToPerformances(
   sportId: string,
   rows: { playerName: string; stats: PlayerMatchStats }[],
 ): Promise<{ performances: PerformanceInput[]; unmatched: string[] }> {
-  const { data: players, error } = await supabase.from("players").select("id, name").eq("sport_id", sportId);
+  const { data: players, error } = await supabase.from("players").select("id, name, name_aliases").eq("sport_id", sportId);
   if (error) throw new Error(error.message);
-  return mapCricApiExtractedToPerformances(players ?? [], rows);
+  const result = mapCricApiExtractedToPerformances(players ?? [], rows);
+  return { performances: result.performances, unmatched: result.unmatched };
 }
 
 /**
