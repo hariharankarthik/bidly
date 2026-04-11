@@ -126,5 +126,33 @@ describe("mergeFieldingFromCricApiJson", () => {
     expect(kohli?.stats.fielding?.catches).toBe(2);
     expect(dhoni?.stats.fielding?.stumpings).toBe(1);
   });
-});
 
+  it("credits fielders from explicit catching[] array (CricAPI v1 format)", () => {
+    const performances = [
+      { playerName: "Dhruv Jurel", stats: { batting: { runs: 10, ballsFaced: 8, fours: 1, sixes: 0, dismissed: false, playedInStartingXi: true } } },
+      { playerName: "Sanju Samson", stats: { batting: { runs: 30, ballsFaced: 20, fours: 3, sixes: 1, dismissed: false, playedInStartingXi: true } } },
+    ];
+    const data = {
+      data: {
+        scorecard: [
+          {
+            batting: [],
+            bowling: [],
+            catching: [
+              { catcher: { id: "abc", name: "Dhruv Jurel" }, catch: 2, stumped: 1, runout: 0, cb: 0, lbw: 0, bowled: 0 },
+              { catcher: { id: "def", name: "Sanju Samson" }, catch: 0, stumped: 0, runout: 1, cb: 0, lbw: 0, bowled: 0 },
+            ],
+            inning: "Test Inning",
+          },
+        ],
+      },
+    };
+
+    const result = mergeFieldingFromCricApiJson(performances, data);
+    const jurel = result.find((p) => p.playerName === "Dhruv Jurel");
+    const samson = result.find((p) => p.playerName === "Sanju Samson");
+    expect(jurel?.stats.fielding?.catches).toBe(2);
+    expect(jurel?.stats.fielding?.stumpings).toBe(1);
+    expect(samson?.stats.fielding?.runOutsDirect).toBe(1);
+  });
+});

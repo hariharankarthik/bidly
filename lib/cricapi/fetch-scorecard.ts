@@ -283,12 +283,14 @@ export function mergeBowlingFromCricApiJson(
     const parts = key.split(" ");
     const lastName = parts[parts.length - 1];
     const lastMatches = byLastName.get(lastName);
-    if (lastMatches?.length === 1) return lastMatches[0];
-    if (lastMatches && lastMatches.length > 1 && parts.length > 1) {
+    // Only use last-name matching if first initial also matches
+    if (lastMatches && parts.length > 1) {
       const initial = parts[0][0];
       const disambig = lastMatches.filter((p) => normalizeName(p.playerName).startsWith(initial));
       if (disambig.length === 1) return disambig[0];
     }
+    // Single last-name match only if bowler name is a single word (e.g., just "Bumrah")
+    if (lastMatches?.length === 1 && parts.length === 1) return lastMatches[0];
     return null;
   }
 
@@ -521,7 +523,7 @@ export function mergeFieldingFromCricApiJson(
       for (const raw of catching) {
         if (!raw || typeof raw !== "object") continue;
         const r = raw as Record<string, unknown>;
-        const nameCandidate = r.fielder ?? r.name ?? r.player ?? r.Fielder;
+        const nameCandidate = r.catcher ?? r.fielder ?? r.name ?? r.player ?? r.Fielder;
         const fielderName = typeof nameCandidate === "string"
           ? str(nameCandidate)
           : (nameCandidate && typeof nameCandidate === "object"
@@ -529,7 +531,7 @@ export function mergeFieldingFromCricApiJson(
             : "");
         if (!fielderName) continue;
         const catches = num(r.catch ?? r.catches ?? r.c ?? 0);
-        const stumpings = num(r.stumpiing ?? r.stumped ?? r.stumpings ?? r.st ?? 0);
+        const stumpings = num(r.stumped ?? r.stumping ?? r.stumpings ?? r.st ?? 0);
         const runOuts = num(r.runout ?? r.runOut ?? r["run out"] ?? r.runouts ?? 0);
         // If explicit counts are provided, credit them directly
         if (catches > 0) {
