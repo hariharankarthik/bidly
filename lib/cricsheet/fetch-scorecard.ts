@@ -92,6 +92,13 @@ type BowlerAccum = {
   lbwOrBowled: number;
 };
 
+type FielderAccum = {
+  catches: number;
+  stumpings: number;
+  runOutsDirect: number;
+  runOutsThrower: number;
+};
+
 /** Wicket kinds that count as bowling dismissals (not run-outs etc). */
 const BOWLING_WICKET_KINDS = new Set([
   "bowled",
@@ -112,7 +119,17 @@ export function aggregateCricsheetInnings(
 ): CricApiMappedPerformance[] {
   const batters = new Map<string, BatterAccum>();
   const bowlers = new Map<string, BowlerAccum>();
+  const fielders = new Map<string, FielderAccum>();
   const overBowlerRuns = new Map<string, { bowler: string; runs: number; balls: number }>();
+
+  function creditFielder(name: string, type: "catch" | "stumping" | "runOutDirect" | "runOutThrower") {
+    let f = fielders.get(name);
+    if (!f) { f = { catches: 0, stumpings: 0, runOutsDirect: 0, runOutsThrower: 0 }; fielders.set(name, f); }
+    if (type === "catch") f.catches++;
+    else if (type === "stumping") f.stumpings++;
+    else if (type === "runOutDirect") f.runOutsDirect++;
+    else if (type === "runOutThrower") f.runOutsThrower++;
+  }
 
   for (const inn of innings) {
     for (const over of inn.overs) {
@@ -180,6 +197,23 @@ export function aggregateCricsheetInnings(
               bowl.wickets += 1;
               if (LBW_OR_BOWLED.has(w.kind)) bowl.lbwOrBowled += 1;
             }
+
+            // Credit fielders
+            const fielderNames = (w.fielders ?? []).map((f) => f.name).filter(Boolean);
+            if (w.kind === "caught" || w.kind === "caught and bowled") {
+              // "caught and bowled" — credit the bowler as catcher
+              const catcher = w.kind === "caught and bowled" ? d.bowler : fielderNames[0];
+              if (catcher) creditFielder(catcher, "catch");
+            } else if (w.kind === "stumped") {
+              if (fielderNames[0]) creditFielder(fielderNames[0], "stumping");
+            } else if (w.kind === "run out") {
+              if (fielderNames.length >= 2) {
+                creditFielder(fielderNames[0], "runOutThrower");
+                creditFielder(fielderNames[1], "runOutDirect");
+              } else if (fielderNames.length === 1) {
+                creditFielder(fielderNames[0], "runOutDirect");
+              }
+            }
           }
         }
       }
@@ -223,6 +257,23 @@ export function aggregateCricsheetInnings(
       existing.stats.bowling = bowling;
     } else {
       byName.set(name, { playerName: name, stats: { bowling } });
+    }
+  }
+
+  for (const [name, f] of fielders) {
+    const hasStats = f.catches > 0 || f.stumpings > 0 || f.runOutsDirect > 0 || f.runOutsThrower > 0;
+    if (!hasStats) continue;
+    const fielding = {
+      catches: f.catches || undefined,
+      stumpings: f.stumpings || undefined,
+      runOutsDirect: f.runOutsDirect || undefined,
+      runOutsThrower: f.runOutsThrower || undefined,
+    };
+    const existing = byName.get(name);
+    if (existing) {
+      existing.stats.fielding = fielding;
+    } else {
+      byName.set(name, { playerName: name, stats: { fielding } });
     }
   }
 
