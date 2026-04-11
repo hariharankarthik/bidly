@@ -1,13 +1,10 @@
--- Weekly free agent window: teams can open one free agent window per week.
--- Changes are staged client-side and committed atomically via RPC.
--- The weekly window resets every Saturday at 12:00 AM Pacific Time.
+-- Change free agent window reset time from Saturday midnight PT to Saturday 8:30 AM PT.
+-- Also reset everyone's fa_window_used_at so all teams get a fresh window.
 
-ALTER TABLE private_league_teams
-  ADD COLUMN IF NOT EXISTS fa_window_used_at TIMESTAMPTZ;
+-- Reset all teams' free agent window
+UPDATE private_league_teams SET fa_window_used_at = NULL;
 
--- Atomically commit a batch of free agent swaps for a team's weekly window.
--- p_swaps: JSONB array of { "drop": "player_uuid", "add": "player_uuid" } objects.
--- Items with drop=null are pure adds (squad not full); items with add=null are pure drops.
+-- Update the RPC with new 8:30 AM PT reset time
 CREATE OR REPLACE FUNCTION commit_free_agent_window(
   p_team_id UUID,
   p_league_id UUID,
@@ -30,7 +27,6 @@ DECLARE
   v_max_squad INT := 15;
 BEGIN
   -- Compute the most recent Saturday 8:30 AM Pacific Time.
-  -- DOW: 0=Sun,1=Mon,...,6=Sat. We want the last Saturday (DOW=6).
   v_week_start := (
     date_trunc('day',
       (NOW() AT TIME ZONE 'America/Los_Angeles')
@@ -93,7 +89,6 @@ BEGIN
         RETURN jsonb_build_object('error', 'Squad would exceed maximum size (15)');
       END IF;
 
-      -- Check player not already on any team in the league
       SELECT EXISTS (
         SELECT 1 FROM private_league_teams plt
         WHERE plt.league_id = p_league_id
@@ -115,7 +110,6 @@ BEGIN
   -- Apply the final squad and mark window as used
   UPDATE private_league_teams SET
     squad_player_ids = v_squad,
-    -- Remove dropped players from starting XI, captain, and vice-captain
     starting_xi_player_ids = (
       SELECT COALESCE(array_agg(pid), '{}')
       FROM unnest(starting_xi_player_ids) AS pid
@@ -129,5 +123,3 @@ BEGIN
   RETURN jsonb_build_object('success', true, 'squad_size', array_length(v_squad, 1));
 END;
 $$;
-
-GRANT EXECUTE ON FUNCTION public.commit_free_agent_window(UUID, UUID, UUID, JSONB) TO authenticated;

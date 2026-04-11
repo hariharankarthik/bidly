@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { PlayerMeta } from "@/components/player/PlayerMeta";
-import { isFreeAgentWindowUsed } from "@/lib/free-agent-window";
+import { isFreeAgentWindowUsed, getNextResetTime } from "@/lib/free-agent-window";
 
 export interface FreeAgent {
   id: string;
@@ -181,10 +181,15 @@ export function FreeAgentsList({
         <div className="rounded-xl border border-white/10 bg-neutral-950/50 p-4">
           {!windowOpen ? (
             windowUsed ? (
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-neutral-400">
-                  ✓ Free agent window used this week. Resets Saturday at midnight PT.
-                </span>
+              <div className="space-y-1.5">
+                <p className="text-sm text-neutral-300">
+                  ✓ Free agent window used this week.
+                </p>
+                <p className="text-xs text-neutral-500">
+                  Your next window opens <span className="text-neutral-400 font-medium">{getNextResetTime().pt} PT</span>
+                  {" · "}<span className="text-neutral-400">{getNextResetTime().ist} IST</span>
+                  {" · "}<span className="text-neutral-400">{getNextResetTime().et} ET</span>
+                </p>
               </div>
             ) : (
               <div className="flex items-center justify-between gap-3">
@@ -254,12 +259,25 @@ export function FreeAgentsList({
                   disabled={committing || staged.length === 0}
                   className="cursor-pointer rounded-lg bg-green-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {committing ? "Saving…" : "Confirm Changes"}
+                  {committing ? "Saving…" : "Close Window & Save Changes"}
                 </button>
               </div>
 
-              <p className="text-[11px] text-amber-400/80">
-                ⚠ Changes are not saved until you click Confirm. If you leave this page, all staged changes will be lost.
+              {staged.length > 0 ? (
+                <div className="rounded-lg border border-amber-500/20 bg-amber-950/20 px-3 py-2 space-y-1">
+                  <p className="text-[11px] text-amber-300/90 font-medium">
+                    ⚠ Once you save, your free agent window will be used for this week.
+                  </p>
+                  <p className="text-[11px] text-amber-400/70">
+                    Next window opens: <span className="font-medium text-amber-300/80">{getNextResetTime().pt} PT</span>
+                    {" · "}{getNextResetTime().ist} IST
+                    {" · "}{getNextResetTime().et} ET
+                  </p>
+                </div>
+              ) : null}
+
+              <p className="text-[11px] text-neutral-500">
+                Changes are not saved until you click &quot;Close Window &amp; Save Changes&quot;. If you leave this page, all staged changes will be lost.
               </p>
             </div>
           )}
