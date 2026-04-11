@@ -188,6 +188,7 @@ export async function POST(req: NextRequest) {
   let cricapiUsed = false;
   let cricExtractedCount = 0;
   let cricSampleNames: string[] = [];
+  let cricapiRaw: unknown = undefined;
 
   let dataSource: "cricapi" | "cricsheet_cache" | undefined;
 
@@ -201,6 +202,7 @@ export async function POST(req: NextRequest) {
       });
       const extracted = result.performances;
       dataSource = result.provider;
+      cricapiRaw = result.raw;
       cricExtractedCount = extracted.length;
       cricSampleNames = extracted.slice(0, 25).map((e) => e.playerName);
 
@@ -403,6 +405,27 @@ export async function POST(req: NextRequest) {
     });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+    // Build deep structure summary of raw CricAPI response for debugging
+    const rawShape = (() => {
+      if (!cricapiRaw) return undefined;
+      const describeNode = (node: unknown, depth: number): unknown => {
+        if (depth > 4) return "...";
+        if (node === null || node === undefined) return null;
+        if (typeof node !== "object") return typeof node;
+        if (Array.isArray(node)) {
+          if (node.length === 0) return "[]";
+          return { array_len: node.length, first_item: describeNode(node[0], depth + 1) };
+        }
+        const o = node as Record<string, unknown>;
+        const result: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(o).slice(0, 20)) {
+          result[k] = describeNode(v, depth + 1);
+        }
+        return result;
+      };
+      return describeNode(cricapiRaw, 0);
+    })();
+
     return NextResponse.json({
       success: true,
       updated: rows.length,
@@ -410,7 +433,6 @@ export async function POST(req: NextRequest) {
       data_source: dataSource ?? (cricapiUsed ? "cricapi" : "manual"),
       performances_applied: applied,
       ...(unmatchedNames?.length ? { unmatched_names: unmatchedNames } : {}),
-      // Diagnostic: summary of extracted stats per discipline
       stats_summary: cricapiUsed ? {
         with_batting: performances.filter((p) => p.batting).length,
         with_bowling: performances.filter((p) => p.bowling).length,
@@ -424,6 +446,7 @@ export async function POST(req: NextRequest) {
           .slice(0, 3)
           .map((p) => ({ player_id: p.player_id, fielding: p.fielding })),
       } : undefined,
+      raw_shape: cricapiUsed ? rawShape : undefined,
     });
   }
 
