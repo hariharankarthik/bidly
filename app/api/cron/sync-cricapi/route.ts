@@ -677,8 +677,9 @@ export async function GET(req: NextRequest) {
       }
 
       // Aggregate effective points per team with XI + C/VC multipliers
-      const agg = new Map<string, { total: number; breakdown: Record<string, number> }>();
-      for (const t of teamList) agg.set(t.id, { total: 0, breakdown: {} });
+      const playerNameById = new Map(players.map((p) => [p.id, p.name]));
+      const agg = new Map<string, { total: number; breakdown: Record<string, number>; detail: object[] }>();
+      for (const t of teamList) agg.set(t.id, { total: 0, breakdown: {}, detail: [] });
 
       for (const row of performances) {
         const teamId = playerToTeam.get(row.player_id);
@@ -687,8 +688,8 @@ export async function GET(req: NextRequest) {
         if (!teamRow) continue;
 
         const stats: PlayerMatchStats = { batting: row.batting, bowling: row.bowling, fielding: row.fielding };
-        const { total: baseTotal, breakdown } = scorePlayerMatch(stats);
-        const { effective, counted } = effectivePointsWithLineup(baseTotal, row.player_id, {
+        const { total: baseTotal, breakdown, sections } = scorePlayerMatch(stats);
+        const { effective, counted, multiplier } = effectivePointsWithLineup(baseTotal, row.player_id, {
           startingXiPlayerIds: teamRow.starting_xi_player_ids ?? [],
           captainPlayerId: teamRow.captain_player_id ?? null,
           viceCaptainPlayerId: teamRow.vice_captain_player_id ?? null,
@@ -698,6 +699,20 @@ export async function GET(req: NextRequest) {
         if (!bucket) continue;
         bucket.total += effective;
         mergeBreakdown(bucket.breakdown, breakdown);
+        bucket.detail.push({
+          player_id: row.player_id,
+          player_name: playerNameById.get(row.player_id) ?? null,
+          base_points: baseTotal,
+          multiplier,
+          effective_points: effective,
+          stats: {
+            ...(row.batting ? { batting: row.batting } : {}),
+            ...(row.bowling ? { bowling: row.bowling } : {}),
+            ...(row.fielding ? { fielding: row.fielding } : {}),
+          },
+          sections,
+          breakdown,
+        });
         updatedTotal += 1;
       }
 
@@ -713,6 +728,7 @@ export async function GET(req: NextRequest) {
           breakdown: {
             source: "cricapi_v1",
             engine_version: "auctionroom-ipl-v1",
+            player_lines: b.detail.slice(0, 40),
             ...(unmatched.length > 0 ? { unmatched_names: unmatched } : {}),
           },
         };
@@ -840,8 +856,9 @@ export async function GET(req: NextRequest) {
         effectiveLineups.set(t.id, { xi: effectiveXi, captain: effectiveCaptain, vc: effectiveVc });
       }
 
-      const pAgg = new Map<string, { total: number; breakdown: Record<string, number> }>();
-      for (const t of pTeamList) pAgg.set(t.id, { total: 0, breakdown: {} });
+      const pPlayerNameById = new Map(players.map((p) => [p.id, p.name]));
+      const pAgg = new Map<string, { total: number; breakdown: Record<string, number>; detail: object[] }>();
+      for (const t of pTeamList) pAgg.set(t.id, { total: 0, breakdown: {}, detail: [] });
 
       for (const row of pPerformances) {
         const teamId = pPlayerToTeam.get(row.player_id);
@@ -851,8 +868,8 @@ export async function GET(req: NextRequest) {
 
         const eff = effectiveLineups.get(teamId);
         const stats: PlayerMatchStats = { batting: row.batting, bowling: row.bowling, fielding: row.fielding };
-        const { total: baseTotal, breakdown } = scorePlayerMatch(stats);
-        const { effective, counted } = effectivePointsWithLineup(baseTotal, row.player_id, {
+        const { total: baseTotal, breakdown, sections } = scorePlayerMatch(stats);
+        const { effective, counted, multiplier } = effectivePointsWithLineup(baseTotal, row.player_id, {
           startingXiPlayerIds: eff?.xi ?? teamRow.starting_xi_player_ids ?? [],
           captainPlayerId: eff?.captain ?? teamRow.captain_player_id ?? null,
           viceCaptainPlayerId: eff?.vc ?? teamRow.vice_captain_player_id ?? null,
@@ -862,6 +879,20 @@ export async function GET(req: NextRequest) {
         if (!bucket) continue;
         bucket.total += effective;
         mergeBreakdown(bucket.breakdown, breakdown);
+        bucket.detail.push({
+          player_id: row.player_id,
+          player_name: pPlayerNameById.get(row.player_id) ?? null,
+          base_points: baseTotal,
+          multiplier,
+          effective_points: effective,
+          stats: {
+            ...(row.batting ? { batting: row.batting } : {}),
+            ...(row.bowling ? { bowling: row.bowling } : {}),
+            ...(row.fielding ? { fielding: row.fielding } : {}),
+          },
+          sections,
+          breakdown,
+        });
         updatedTotal += 1;
       }
 
@@ -878,6 +909,7 @@ export async function GET(req: NextRequest) {
             source: "cricapi_v1",
             engine_version: "auctionroom-ipl-v1",
             league_kind: "private",
+            player_lines: b.detail.slice(0, 40),
             ...(pUnmatched.length > 0 ? { unmatched_names: pUnmatched } : {}),
           },
         };
