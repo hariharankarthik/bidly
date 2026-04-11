@@ -190,7 +190,7 @@ function PlayerLineRow({ pl }: { pl: PlayerLine }) {
               ) : null}
             </p>
           ) : null}
-          {pl.stats.bowling && (pl.sections?.bowling || pl.stats.bowling.wicketsExcludingRunOut !== undefined) ? (() => {
+          {pl.stats.bowling ? (() => {
             const b = pl.stats.bowling;
             const overs = Math.floor((b.ballsBowled ?? 0) / 6);
             const balls = (b.ballsBowled ?? 0) % 6;
@@ -199,21 +199,30 @@ function PlayerLineRow({ pl }: { pl: PlayerLine }) {
                 <span className="text-green-400/70">BOWL</span>{" "}
                 {overs}.{balls}-{b.runsConceded ?? 0}-{b.wicketsExcludingRunOut ?? 0}{" "}
                 {(b.maidens ?? 0) > 0 ? <span>{b.maidens}M </span> : null}
+                {(b.dotBalls ?? 0) > 0 ? <span>{b.dotBalls}dot </span> : null}
                 {pl.sections?.bowling ? (
                   <span className="text-neutral-400">→ {Object.values(pl.sections.bowling).reduce((a, b) => a + b, 0).toFixed(0)}pts</span>
                 ) : null}
               </p>
             );
           })() : null}
-          {pl.stats.fielding && pl.sections?.fielding && Object.values(pl.sections.fielding).some((v) => v > 0) ? (
-            <p>
-              <span className="text-amber-400/70">FIELD</span>{" "}
-              {(pl.stats.fielding.catches ?? 0) > 0 ? <span>{pl.stats.fielding.catches}ct </span> : null}
-              {(pl.stats.fielding.stumpings ?? 0) > 0 ? <span>{pl.stats.fielding.stumpings}st </span> : null}
-              {(pl.stats.fielding.runOutsDirect ?? 0) > 0 ? <span>{pl.stats.fielding.runOutsDirect}ro </span> : null}
-              <span className="text-neutral-400">→ {Object.values(pl.sections.fielding).reduce((a, b) => a + b, 0).toFixed(0)}pts</span>
-            </p>
-          ) : null}
+          {pl.stats.fielding ? (() => {
+            const f = pl.stats.fielding;
+            const hasSomething = (f.catches ?? 0) > 0 || (f.stumpings ?? 0) > 0 || (f.runOutsDirect ?? 0) > 0 || (f.runOutsThrower ?? 0) > 0;
+            if (!hasSomething) return null;
+            return (
+              <p>
+                <span className="text-amber-400/70">FIELD</span>{" "}
+                {(f.catches ?? 0) > 0 ? <span>{f.catches}ct </span> : null}
+                {(f.stumpings ?? 0) > 0 ? <span>{f.stumpings}st </span> : null}
+                {(f.runOutsDirect ?? 0) > 0 ? <span>{f.runOutsDirect}ro </span> : null}
+                {(f.runOutsThrower ?? 0) > 0 ? <span>{f.runOutsThrower}ro-assist </span> : null}
+                {pl.sections?.fielding ? (
+                  <span className="text-neutral-400">→ {Object.values(pl.sections.fielding).reduce((a, b) => a + b, 0).toFixed(0)}pts</span>
+                ) : null}
+              </p>
+            );
+          })() : null}
         </div>
       ) : null}
     </div>
