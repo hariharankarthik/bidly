@@ -1,7 +1,4 @@
 -- Change free agent window reset from Saturday 8:30 AM PT to Thursday 3:00 PM PT.
--- Also reset everyone's fa_window_used_at so all teams get a fresh window.
-
-UPDATE private_league_teams SET fa_window_used_at = NULL;
 
 CREATE OR REPLACE FUNCTION commit_free_agent_window(
   p_team_id UUID,
