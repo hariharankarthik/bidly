@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PlayerMeta } from "@/components/player/PlayerMeta";
@@ -40,6 +41,10 @@ export function PrivateLineupPanel({
   const [vc, setVc] = useState<string | null>(viceCaptainPlayerId);
   const [saving, setSaving] = useState(false);
   const [windowState, setWindowState] = useState(() => getWindowStatus());
+  // Mirror of server-side xi_confirmed_at flipped after a successful save so
+  // the lock kicks in without a full reload (router.refresh() also runs).
+  const [confirmedLocally, setConfirmedLocally] = useState(false);
+  const router = useRouter();
 
   // Refresh window status every 30s so the UI transitions without a reload.
   useEffect(() => {
@@ -48,7 +53,8 @@ export function PrivateLineupPanel({
   }, []);
 
   // Lock is only enforced after the first XI has been confirmed.
-  const locked = xiConfirmed && !windowState.open;
+  const effectivelyConfirmed = xiConfirmed || confirmedLocally;
+  const locked = effectivelyConfirmed && !windowState.open;
   const opensAtFmt = useMemo(() => formatWindowBoundary(windowState.opensAt), [windowState.opensAt]);
   const closesAtFmt = useMemo(() => formatWindowBoundary(windowState.closesAt), [windowState.closesAt]);
 
@@ -174,6 +180,12 @@ export function PrivateLineupPanel({
         throw new Error(data.error || "Save failed");
       }
       toast.success("Lineup saved");
+      // If this was the first-ever confirmation, flip local state so the lock
+      // takes effect immediately, and refresh server props.
+      if ([...xi].length > 0 && !xiConfirmed) {
+        setConfirmedLocally(true);
+      }
+      router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed");
     } finally {

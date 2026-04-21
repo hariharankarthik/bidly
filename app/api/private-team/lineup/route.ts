@@ -125,8 +125,9 @@ export async function POST(req: NextRequest) {
   }
 
   // Lineup change time-window lock.
-  // Bypass for first-ever XI confirmation so users onboarding mid-match can still set their initial XI.
-  const isFirstXiSetup = !team.xi_confirmed_at;
+  // Bypass only for first-ever XI confirmation (i.e. a non-empty XI being set for the first time).
+  // An empty-XI save never qualifies as first setup — otherwise it could be abused to wipe an XI during lock.
+  const isFirstXiSetup = !team.xi_confirmed_at && xi.length > 0;
   if (!isFirstXiSetup) {
     const windowStatus = getWindowStatus();
     if (!windowStatus.open) {
